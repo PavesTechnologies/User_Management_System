@@ -137,6 +137,115 @@ class RoleService:
 
         # 4. Finally delete the role
         return role_dao.delete_role(self.db, role.role_id)
+    
+    @audit_action_with_request(
+    action_type="DELETE",
+    entity_type="Role",
+    capture_old_data=True,
+    description="Deleted multiple roles by UUID",
+    )
+    def delete_roles_by_uuid(self, role_uuids: list[str], audit_data=None, **kwargs):
+        if audit_data is None:
+            audit_data = {}
+
+        if not role_uuids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one role UUID is required",
+            )
+
+        role_uuids = list(set(role_uuids))
+
+        mandatory_roles = ["Admin", "Super Admin", "HR", "General"]
+
+        deleted_roles = []
+        failed_roles = []
+
+        general_role = role_dao.get_role_by_name(self.db, "General")
+        if not general_role:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="General role not found",
+            )
+
+        try:
+            for role_uuid in role_uuids:
+                role = role_dao.get_role_by_uuid(self.db, role_uuid)
+
+                if not role:
+                    failed_roles.append({
+                        "role_uuid": role_uuid,
+                        "reason": "Role not found",
+                    })
+                    continue
+
+                if role.role_name in mandatory_roles:
+                    failed_roles.append({
+                        "role_uuid": role_uuid,
+                        "role_name": role.role_name,
+                        "reason": f"Role '{role.role_name}' is mandatory and cannot be deleted",
+                    })
+                    continue
+
+                deleted_roles.append({
+                    "role_id": role.role_id,
+                    "role_uuid": role.role_uuid,
+                    "role_name": role.role_name,
+                })
+
+                # 1. Get all users who have this role
+                user_ids = role_dao.get_users_by_role(self.db, role.role_id)
+
+                # 2. Cleanup dependent mappings
+                role_dao.delete_user_roles_by_role(self.db, role.role_id)
+                role_dao.delete_role_permission_groups(self.db, role.role_id)
+
+                # 3. Assign "General" role to users who now have no roles
+                for user_id in user_ids:
+                    user_roles = role_dao.get_user_roles(self.db, user_id)
+
+                    if not user_roles:
+                        role_dao.assign_role(self.db, user_id, general_role.role_id)
+
+                # 4. Finally delete the role
+                role_dao.delete_role(self.db, role.role_id)
+
+            if not deleted_roles:
+                self.db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": "No roles were deleted",
+                        "failed_roles": failed_roles,
+                    },
+                )
+
+            self.db.commit()
+
+        except HTTPException:
+            self.db.rollback()
+            raise
+
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete roles: {str(e)}",
+            )
+
+        audit_data["entity_id"] = None
+        audit_data["old_data"] = {
+            "deleted_count": len(deleted_roles),
+            "deleted_roles": deleted_roles,
+            "failed_roles": failed_roles,
+        }
+
+        return {
+            "message": "Roles deleted successfully",
+            "deleted_count": len(deleted_roles),
+            "deleted_roles": deleted_roles,
+            "failed_roles": failed_roles,
+        }
 
     def update_role_permission_groups(
         self, role_id: int, payload: RolePermissionGroupUpdate

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from typing import List
 
-from ..interfaces.role_mangement import RoleBase, RoleOut, RoleGroupRequest, Group
+from ..interfaces.role_mangement import RoleBase, RoleOut, RoleGroupRequest, Group , BulkDeleteRolesRequest
 from ...Business_Layer.services.role_service import RoleService
 
 router = APIRouter()
@@ -22,6 +22,18 @@ def admin_home():
 def list_roles(service: RoleService = Depends(get_role_service)):
     return service.list_roles()
 
+
+@router.delete("/bulk-delete", status_code=200)
+def bulk_delete_roles(
+    payload: BulkDeleteRolesRequest,
+    request: Request,
+    service: RoleService = Depends(get_role_service),
+):
+    return service.delete_roles_by_uuid(
+        payload.role_uuids,
+        current_user=request.state.user,
+        request=request,
+    )
 
 @router.get("/uuid/{role_uuid}", response_model=RoleOut)
 def get_role_by_uuid(role_uuid: str, service: RoleService = Depends(get_role_service)):
