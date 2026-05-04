@@ -143,7 +143,7 @@ class PermissionGroupService:
     capture_old_data=True,
     description="Deleted permission groups",
     )
-    def delete_groups(self, group_uuids: list[str], **kwargs):
+    def delete_groups_bulk(self, group_uuids: list[str], **kwargs):
         audit_data = kwargs.get("audit_data", {})
 
         if not group_uuids:
