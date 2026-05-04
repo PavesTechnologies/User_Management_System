@@ -1,5 +1,6 @@
+from fastapi import Query
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
 
@@ -31,3 +32,13 @@ class Group(BaseModel):
 
 class BulkDeleteRolesRequest(BaseModel):
     role_uuids: List[str]
+
+class User_Role_input(BaseModel):
+    role_uuid: Optional[str] = Query(None)
+    role_name: Optional[str] = Query(None)
+class User_Role(BaseModel):
+    user_id: int
+    employee_id: Optional[str]
+    role_name: str
+
+
