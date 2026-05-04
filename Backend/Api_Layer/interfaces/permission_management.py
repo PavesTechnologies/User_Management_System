@@ -66,3 +66,6 @@ class PermissionResponse(BaseModel):
 class BulkPermissionCreationResponse(BaseModel):
     created_permissions: List[PermissionBaseCreation]
     failed_entries: List[str]
+
+class BulkDeletePermissionsRequest(BaseModel):
+    permission_uuids: List[str]
