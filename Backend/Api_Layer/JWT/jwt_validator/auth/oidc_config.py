@@ -11,12 +11,14 @@ from Backend.config.env_loader import get_env_var
 from Backend.Api_Layer.JWT.token_creation.config import get_active_public_key
 from Backend.Business_Layer.utils.jwt_encode import decrypt_key
 
-ISSUER = get_env_var("ISSUER")
+# ISSUER = get_env_var("ISSUER")
+ALLOWED_ISSUERS = get_env_var("ALLOWED_ISSUERS").split(",")
 
 
 class OIDCValidator:
     def __init__(self):
-        self.issuer = ISSUER
+        self.issuer = ALLOWED_ISSUERS[0]
+        self.allowed_issuers = ALLOWED_ISSUERS
         self.jwks_dict = {}
         self._config_loaded = False
         self._config_lock = threading.Lock()

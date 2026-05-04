@@ -23,7 +23,8 @@ router = APIRouter()
 #         jwks = json.load(f)
 #     return JSONResponse(content=jwks)
 
-ISSUER = get_env_var("ISSUER")
+# ISSUER = get_env_var("ISSUER")
+ALLOWED_ISSUERS = get_env_var("ALLOWED_ISSUERS").split(",")
 
 # Fetching public key from DB
 
@@ -51,8 +52,8 @@ def serve_jwks():
 @router.get("/.well-known/openid-configuration")
 def openid_config():
     config = {
-        "issuer": ISSUER,
-        "jwks_uri": f"{ISSUER}/.well-known/jwks.json",
+        "issuer": ALLOWED_ISSUERS[0],
+        "jwks_uri": f"{ALLOWED_ISSUERS[0]}/.well-known/jwks.json",
         "id_token_signing_alg_values_supported": ["RS256"],
         "token_endpoint_auth_methods_supported": ["private_key_jwt"],
         "response_types_supported": ["token"],
