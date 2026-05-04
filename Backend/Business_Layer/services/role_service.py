@@ -25,7 +25,7 @@ class RoleService:
     def _normalize_role_name(self, role_name: str) -> str:
         """
         Validate and normalize role name for duplicate checking:
-        - Allow only letters (A–Z, a–z), spaces, and hyphens
+        - Allow only letters (A–Z, a–z), spaces, hyphens, and underscores
         - No digits or other special characters allowed
         - Remove leading/trailing spaces
         - Replace multiple spaces with a single space
@@ -33,11 +33,11 @@ class RoleService:
         """
         import re
 
-        # 1. Validation — ensure only allowed characters
-        if not re.fullmatch(r"[A-Za-z\s\-]+", role_name.strip()):
+        # 1. Validation — ensure only allowed characters (added _)
+        if not re.fullmatch(r"[A-Za-z\s\-_]+", role_name.strip()):
             raise HTTPException(
                 status_code=400,
-                detail="Role name can only contain letters, spaces, and hyphens",
+                detail="Role name can only contain letters, spaces, hyphens, and underscores",
             )
 
         # 2. Normalize spaces and lowercase for comparison
