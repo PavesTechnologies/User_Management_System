@@ -5,6 +5,7 @@ from ..interfaces.permissiongroup import (
     GroupOut,
     PermissionInGroupwithId,
     GroupIn,
+    BulkDeletePermissionGroupsRequest,
 )
 from ...Business_Layer.services.permission_group_service import PermissionGroupService
 from ..interfaces.permission_management import PermissionOut
@@ -114,6 +115,22 @@ def delete_group(
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Group not found")
+    
+# -------------------------------------------------------
+# Bulk delete permission groups
+# -------------------------------------------------------
+@router.delete("/bulk-delete", status_code=200)
+def bulk_delete_permission_groups(
+    payload: BulkDeletePermissionGroupsRequest,
+    request: Request,
+):
+    service = PermissionGroupService(request.state.db)
+
+    return service.delete_groups(
+        payload.group_uuids,
+        request=request,
+        current_user=request.state.user,
+    )
 
 
 # -------------------------------------------------------

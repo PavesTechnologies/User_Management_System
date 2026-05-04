@@ -136,6 +136,107 @@ class PermissionGroupService:
             "created_at": str(group.created_at),
         }
         return {"message": "Permission group deleted successfully"}
+    
+    @audit_action_with_request(
+    action_type="DELETE",
+    entity_type="Permission_Group",
+    capture_old_data=True,
+    description="Deleted permission groups",
+    )
+    def delete_groups(self, group_uuids: list[str], **kwargs):
+        audit_data = kwargs.get("audit_data", {})
+
+        if not group_uuids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one permission group UUID is required",
+            )
+
+        # Remove duplicate UUIDs
+        group_uuids = list(set(group_uuids))
+
+        deleted_groups_old_data = []
+        failed_groups = []
+
+        default_group = self.dao.get_group_by_name("newly_created_permissions_group")
+
+        try:
+            for group_uuid in group_uuids:
+                group = self.dao.get_group_by_uuid(group_uuid)
+
+                if not group:
+                    failed_groups.append({
+                        "group_uuid": group_uuid,
+                        "reason": "Permission group not found",
+                    })
+                    continue
+
+                if default_group and group.group_uuid == default_group.group_uuid:
+                    failed_groups.append({
+                        "group_uuid": group_uuid,
+                        "reason": "Cannot delete the default permission group",
+                    })
+                    continue
+
+                # Store old data before delete for audit
+                deleted_groups_old_data.append({
+                    "group_id": group.group_id,
+                    "group_name": group.group_name,
+                    "group_uuid": group.group_uuid,
+                    "created_by": group.created_by,
+                    "created_at": str(group.created_at),
+                })
+
+                # Clear relationships first
+                self.dao.clear_group_permissions(group.group_id)
+                self.dao.clear_group_roles(group.group_id)
+
+                # Delete group
+                deleted = self.dao.delete_group(group.group_id)
+
+                if not deleted:
+                    failed_groups.append({
+                        "group_uuid": group_uuid,
+                        "reason": "Failed to delete permission group",
+                    })
+
+            if not deleted_groups_old_data:
+                self.db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": "No permission groups were deleted",
+                        "failed": failed_groups,
+                    },
+                )
+
+            self.db.commit()
+
+        except HTTPException:
+            self.db.rollback()
+            raise
+
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete permission groups: {str(e)}",
+            )
+
+        # Audit data for multiple deleted groups
+        audit_data["entity_id"] = None
+        audit_data["old_data"] = {
+            "deleted_count": len(deleted_groups_old_data),
+            "deleted_groups": deleted_groups_old_data,
+            "failed_groups": failed_groups,
+        }
+
+        return {
+            "message": "Permission groups deleted successfully",
+            "deleted_count": len(deleted_groups_old_data),
+            "deleted_groups": deleted_groups_old_data,
+            "failed_groups": failed_groups,
+        }
 
     def delete_group_cascade(self, group_uuid: str):
         return self.dao.delete_group_cascade(group_uuid)
