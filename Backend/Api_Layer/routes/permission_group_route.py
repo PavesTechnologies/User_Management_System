@@ -126,7 +126,7 @@ def bulk_delete_permission_groups(
 ):
     service = PermissionGroupService(request.state.db)
 
-    return service.delete_groups(
+    return service.delete_groups_bulk(
         payload.group_uuids,
         request=request,
         current_user=request.state.user,
