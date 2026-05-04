@@ -28,3 +28,6 @@ class Group(BaseModel):
     group_name: str
     created_at: datetime
     updated_at: datetime
+
+class BulkDeleteRolesRequest(BaseModel):
+    role_uuids: List[str]
