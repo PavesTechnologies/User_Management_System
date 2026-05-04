@@ -8,6 +8,7 @@ from ..interfaces.permission_management import (
     PermissionResponse,
     PermissionBaseCreation,
     BulkPermissionCreationResponse,
+    BulkDeletePermissionsRequest
 )
 
 router = APIRouter()
@@ -32,6 +33,19 @@ def get_unmapped_permissions(request: Request):
     service = PermissionService(request.state.db)
     return service.list_unmapped_permissions()
 
+
+@router.delete("/bulk-delete", status_code=200)
+def bulk_delete_permissions(
+    payload: BulkDeletePermissionsRequest,
+    request: Request,
+):
+    service = PermissionService(request.state.db)
+
+    return service.delete_permissions(
+        payload.permission_uuids,
+        current_user=request.state.user,
+        request=request,
+    )
 
 @router.get("/{permission_uuid}", response_model=PermissionOut)
 def get_permission(permission_uuid: str, request: Request):

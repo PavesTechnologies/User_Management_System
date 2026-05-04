@@ -387,6 +387,92 @@ class PermissionService:
             )
 
         return {"message": f"Permission with ID {permission_uuid} deleted successfully"}
+    
+    @audit_action_with_request(
+    action_type="DELETE",
+    entity_type="Permissions",
+    capture_old_data=True,
+    capture_new_data=False,
+    description="Deleted permissions",
+    )
+    def delete_permissions(self, permission_uuids: list[str], audit_data=None, **kwargs):
+        if audit_data is None:
+            audit_data = {}
+
+        if not permission_uuids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one permission UUID is required",
+            )
+
+        permission_uuids = list(set(permission_uuids))
+
+        deleted_permissions_old_data = []
+        failed_permissions = []
+
+        try:
+            for permission_uuid in permission_uuids:
+                permission = self.dao.get_by_uuid(permission_uuid)
+
+                if not permission:
+                    failed_permissions.append(
+                        {
+                            "permission_uuid": permission_uuid,
+                            "reason": "Permission not found",
+                        }
+                    )
+                    continue
+
+                deleted_permissions_old_data.append(
+                    {
+                        "permission_id": permission.permission_id,
+                        "permission_uuid": permission.permission_uuid,
+                        "permission_code": permission.permission_code,
+                        "description": permission.description,
+                    }
+                )
+
+                permission.access_mappings.clear()
+                permission.permission_groups.clear()
+
+                self.dao.delete(permission)
+
+            if not deleted_permissions_old_data:
+                self.db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": "No permissions were deleted",
+                        "failed_permissions": failed_permissions,
+                    },
+                )
+
+            self.db.commit()
+
+        except HTTPException:
+            self.db.rollback()
+            raise
+
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete permissions: {str(e)}",
+            )
+
+        audit_data["entity_id"] = None
+        audit_data["old_data"] = {
+            "deleted_count": len(deleted_permissions_old_data),
+            "deleted_permissions": deleted_permissions_old_data,
+            "failed_permissions": failed_permissions,
+        }
+
+        return {
+            "message": "Permissions deleted successfully",
+            "deleted_count": len(deleted_permissions_old_data),
+            "deleted_permissions": deleted_permissions_old_data,
+            "failed_permissions": failed_permissions,
+        }
 
     def delete_permission_cascade(self, permission_uuid: str):
         if not self.dao.get_by_uuid(permission_uuid):
