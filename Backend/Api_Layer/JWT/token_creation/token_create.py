@@ -56,7 +56,7 @@ def token_create(token_data: dict, request=None, issuer=None, db=None) -> str:
         "email": token_data["email"],
         "name": token_data["name"],
         "employee_id": token_data["employee_id"],
-        "user_uuid": token_data["user_uuid"],
+        "obs_user_uuid": token_data["user_uuid"],
         "roles": token_data["roles"],
         "permissions": token_data["permissions"],
         "iss": issuer,
