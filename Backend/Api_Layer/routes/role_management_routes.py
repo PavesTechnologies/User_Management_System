@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Request
-from typing import List
+from fastapi import APIRouter, Depends, Request, Query
+from typing import Optional, List
 
-from ..interfaces.role_mangement import RoleBase, RoleOut, RoleGroupRequest, Group , BulkDeleteRolesRequest
+from ..interfaces.role_mangement import (RoleBase, RoleOut, RoleGroupRequest, Group , 
+                                         BulkDeleteRolesRequest, User_Role, User_Role_input)
 from ...Business_Layer.services.role_service import RoleService
 
 router = APIRouter()
@@ -152,3 +153,14 @@ def get_unassigned_permission_groups_for_role(
     role_uuid: str, service: RoleService = Depends(get_role_service)
 ):
     return service.get_unassigned_permission_groups(role_uuid)
+
+@router.get("/users/role_name", response_model=List[User_Role])
+def get_users_by_role_id_or_name(
+    role_uuid: Optional[str] = Query(None),
+    role_name: Optional[str] = Query(None),
+    service: RoleService = Depends(get_role_service)
+):
+    return service.get_users_by_role_uuid_or_name(
+        role_name=role_name,
+        role_uuid=role_uuid
+    )

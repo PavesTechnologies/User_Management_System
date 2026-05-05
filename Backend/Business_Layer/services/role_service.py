@@ -387,3 +387,7 @@ class RoleService:
     def get_unassigned_permission_groups(self, role_uuid: str):
         role = role_dao.get_role_by_uuid(self.db, role_uuid)
         return role_dao.get_unassigned_permission_groups(self.db, role.role_id)
+    
+    def get_users_by_role_uuid_or_name(self, role_name:str, role_uuid: str):
+        print(f"Service received role_uuid: {role_uuid}, role_name: {role_name}")
+        return role_dao.get_users_by_role_uuid_or_name(self.db, role_uuid, role_name)
