@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from ..interfaces.auth import (
     RegisterUser,
+    RefreshTokenSchema,
     LoginUser,
     ForgotPassword,
     ChangePasswordFirstLogin,
@@ -28,19 +29,22 @@ def login(credentials: LoginUser, request: Request):
     return auth_service.login_user(credentials, client_ip, request)
 
 
+# router
 @router.post("/logout")
-def logout(request: Request):
+def logout(request: Request, body: RefreshTokenSchema):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token"
-        )
-    token = auth_header.split(" ")[1]
+        raise HTTPException(status_code=401, detail="Missing access token")
 
-    if blacklist_token(token):
-        return {"message": "User logged out successfully"}
+    access_token = auth_header.split(" ")[1]
+
+    access_blacklisted  = blacklist_token(access_token)
+    refresh_blacklisted = blacklist_token(body.refresh_token)
+
+    if access_blacklisted or refresh_blacklisted:
+        return {"message": "Logged out successfully"}
     else:
-        raise HTTPException(status_code=500, detail="Logout failed (Redis unavailable)")
+        raise HTTPException(status_code=500, detail="Logout failed")
 
 
 @router.get("/ms-login")
@@ -100,6 +104,10 @@ def change_password_first_login(payload: ChangePasswordFirstLogin, request: Requ
     )
 
 
-@router.post("/offerletter-accepted")
-def check_endpoint(request: Request):
-    return {"message": "Endpoint is working"}
+@router.post("/auth/refresh")
+def refresh_token(
+    body: RefreshTokenSchema,   # { refresh_token: str }
+    request: Request
+):
+    return auth_service.refresh_token(body.refresh_token, request)
+    

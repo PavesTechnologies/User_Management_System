@@ -1,8 +1,8 @@
-# token_blacklist.py
+# Backend/Business_Layer/utils/token_blacklist.py
 import time
 from .redis_client import get_redis_client
-from ...Api_Layer.JWT.jwt_validator.auth.jwt_utils import decode_access_token
-
+# from ...Api_Layer.JWT.jwt_validator.auth.jwt_utils import decode_access_token
+from ...Api_Layer.JWT.jwt_validator.auth.jwt_utils import decode_any_token
 BLACKLIST_PREFIX = "blacklist:"
 
 # ---- Local in-memory cache ----
@@ -26,7 +26,7 @@ def blacklist_token(token: str):
     redis_client = get_redis_client()
 
     try:
-        payload = decode_access_token(token)
+        payload = decode_any_token(token)
         jti = payload.get("jti")
         exp = float(payload.get("exp", 0))
         ttl = int(exp - time.time())

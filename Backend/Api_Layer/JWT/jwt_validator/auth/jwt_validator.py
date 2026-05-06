@@ -58,3 +58,20 @@ def validate_jwt_token(token: str):
     except Exception as e:
         print(f"💥 Unexpected validation error: {e}")
         raise HTTPException(status_code=401, detail=f"JWT validation failed: {str(e)}")
+    
+# jwt_utils.py — add this generic decoder
+def decode_any_token(token: str) -> dict:
+    """Decode any JWT (access or refresh) — used only for blacklisting."""
+    validator = get_oidc_validator()
+    header = jwt.get_unverified_header(token)
+    kid = header.get("kid")
+    key = validator.get_signing_key(kid)
+
+    return jwt.decode(
+        token,
+        key=key,
+        algorithms=["RS256"],
+        options={"verify_exp": False},  # allow blacklisting even if expired
+        issuer=validator.allowed_issuers,
+        audience=None,
+    )

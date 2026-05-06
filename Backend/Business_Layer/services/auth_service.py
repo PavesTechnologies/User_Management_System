@@ -14,11 +14,13 @@ from ...Api_Layer.interfaces.auth import (
 from ...Data_Access_Layer.dao.auth_dao import AuthDAO
 from ...Data_Access_Layer.models import models
 from ...Data_Access_Layer.dao.user_dao import UserDAO
-from ...Api_Layer.JWT.token_creation.token_create import token_create
+from ...Api_Layer.JWT.token_creation.token_create import token_create, refresh_token_create
 from ..utils.password_utils import (
     hash_password,
     verify_password,
 )
+from ...Api_Layer.JWT.jwt_validator.auth.jwt_validator import validate_jwt_token
+from ...Business_Layer.utils.token_blacklist import blacklist_token, is_token_blacklisted
 from ..utils.input_validators import validate_email_format, validate_password_strength
 from ...Data_Access_Layer.utils.dependency import get_db  # only used here
 from ...config.env_loader import get_env_var
@@ -130,6 +132,7 @@ class AuthService:
             "permissions": permissions,
         }
         access_token = token_create(token_data, request=request, db=dao.db)
+        refresh_token = refresh_token_create(token_data, request=request, db=dao.db)
         print(f"⏱ token_create: {(time.time()-t)*1000:.1f}ms")
         t = time.time()
 
@@ -144,8 +147,71 @@ class AuthService:
 
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
             "redirect": redirect,
+        }
+    
+    def refresh_token(self, refresh_token_str: str, request: Request):
+        dao = self._get_dao(request)
+
+        # ── Step 1: Validate signature + expiry ──────────────────
+        # ✅ Reuse validate_jwt_token — it handles:
+        #    - signature verification
+        #    - key rotation (kid lookup)
+        #    - expiry check
+        #    - blacklist check (is_token_blacklisted inside)
+        #    - issuer check
+        try:
+            payload = validate_jwt_token(refresh_token_str)
+        except HTTPException as e:
+            # re-raise with clearer message
+            if e.status_code == 401:
+                raise HTTPException(401, "Refresh token invalid or expired, please login again")
+            raise
+
+        # ── Step 2: Type guard ────────────────────────────────────
+        # ✅ Make sure this is actually a refresh token
+        #    (not an access token being misused)
+        if payload.get("token_type") != "refresh":
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token type"
+            )
+
+        # ── Step 3: Fetch fresh user data from DB ─────────────────
+        # ✅ Use your existing dao pattern
+        user_id = payload.get("user_id")
+        results = dao.get_user_login_data_by_id(user_id)  # fetch by id
+        if not results:
+            raise HTTPException(401, "User not found or inactive")
+
+        user, roles, permissions = results
+
+        token_data = {
+            "sub": str(user.user_id),
+            "user_id": user.user_id,
+            "employee_id": user.employee_id,
+            "user_uuid": user.user_uuid,
+            "name": user.first_name + " " + user.last_name,
+            "email": user.mail,
+            "roles": roles,           # ✅ fresh from DB
+            "permissions": permissions,  # ✅ fresh from DB
+        }
+
+        # ── Step 4: Blacklist old refresh token ───────────────────
+        # ✅ reuse blacklist_token as-is
+        # But blacklist_token takes full token string, not jti!
+        blacklist_token(refresh_token_str)   # ✅ your existing signature
+
+        # ── Step 5: Issue new tokens ──────────────────────────────
+        new_access_token  = token_create(token_data, request=request, db=dao.db)
+        new_refresh_token = refresh_token_create(token_data, request=request, db=dao.db)
+
+        return {
+            "access_token":  new_access_token,
+            "refresh_token": new_refresh_token,
+            "token_type":    "bearer"
         }
 
     def handle_microsoft_callback(self, code: str, client_ip, request: Request):
