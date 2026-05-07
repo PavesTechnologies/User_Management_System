@@ -30,6 +30,9 @@ class UserDAO:
 
     def get_user_by_email(self, email: str) -> Optional[models.User]:
         return self.db.query(models.User).filter_by(mail=email).first()
+    
+    def get_user_by_employee_id(self, employee_id: int) -> Optional[models.User]:
+        return self.db.query(models.User).filter_by(employee_id=employee_id).first()
 
     def get_user_by_id(self, user_id: int) -> Optional[models.User]:
         return self.db.query(models.User).filter_by(user_id=user_id).first()
