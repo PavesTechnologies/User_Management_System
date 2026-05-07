@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Query
 from ..interfaces.user_management import (
+    EmployeeIDin,
     UserOut,
     UserRoleUpdate,
     UserBaseIn,
@@ -49,7 +50,18 @@ def count_active_users(request: Request):
     service = get_user_service(request)
     return {"active_user_count": service.count_active_users()}
 
-
+# ------------------------------------------------------------------------------
+# Get User by Employee ID
+@router.get("/employee/ids")
+def get_user_by_employee_id(employee_ids:EmployeeIDin,request: Request):
+    service = get_user_service(request)
+    try:
+        users = service.get_user_by_employee_ids(employee_ids.employee_ids)
+        if not users:
+            raise ValueError("No users found for the given employee IDs")
+        return users
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 # ------------------------------------------------------------------------------
 # Paginated User List
 # ------------------------------------------------------------------------------
