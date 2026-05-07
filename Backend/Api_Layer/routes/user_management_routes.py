@@ -52,7 +52,7 @@ def count_active_users(request: Request):
 
 # ------------------------------------------------------------------------------
 # Get User by Employee ID
-@router.get("/employee/ids")
+@router.post("/employee/ids")
 def get_user_by_employee_id(employee_ids:EmployeeIDin,request: Request):
     service = get_user_service(request)
     try:
