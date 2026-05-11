@@ -104,7 +104,7 @@ def change_password_first_login(payload: ChangePasswordFirstLogin, request: Requ
     )
 
 
-@router.post("/auth/refresh")
+@router.post("/refresh")
 def refresh_token(
     body: RefreshTokenSchema,   # { refresh_token: str }
     request: Request

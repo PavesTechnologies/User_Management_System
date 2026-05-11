@@ -295,7 +295,8 @@ class AuthService:
             "permissions": permissions,
         }
 
-        access_token = token_create(token_data, request=request)
+        access_token = token_create(token_data, request=request, db=dao.db)
+        refresh_token = refresh_token_create(token_data, request=request, db=dao.db)
         redirect = "/dashboard"
         if dao.check_user_first_login(user.user_id):
             redirect = "/change-password"
@@ -303,6 +304,7 @@ class AuthService:
         dao.update_last_login(user.user_id, client_ip)
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
             "redirect": redirect,
         }
