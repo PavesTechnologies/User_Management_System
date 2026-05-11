@@ -79,6 +79,57 @@ class AuthDAO:
         print("permissions in get_user_login_data", permissions)
 
         return user, roles, permissions
+    
+    def get_user_login_data_by_id(self, user_id: int):
+        # Step 1: Get user
+        user = (
+            self.db.query(models.User)
+            .filter(models.User.user_id == user_id, models.User.is_active)
+            .first()
+        )
+
+        if not user:
+            print("User not found in get_user_login_data_by_id")
+            return None, None, None
+
+        print("user details", user.user_id)
+
+        # Step 2: Get roles (simple join — always works even if no permissions)
+        role_results = (
+            self.db.query(models.Role.role_name)
+            .join(models.User_Role, models.User_Role.role_id == models.Role.role_id)
+            .filter(models.User_Role.user_id == user.user_id)
+            .distinct()
+            .all()
+        )
+        roles = [r.role_name for r in role_results]
+        print("roles in get_user_login_data_by_id", roles)
+
+        # Step 3: Get permissions (separate query — won't affect roles if empty)
+        permission_results = (
+            self.db.query(models.Permissions.permission_code)
+            .join(
+                models.Permission_Group_Mapping,
+                models.Permissions.permission_id
+                == models.Permission_Group_Mapping.permission_id,
+            )
+            .join(
+                models.Role_Permission_Group,
+                models.Role_Permission_Group.group_id
+                == models.Permission_Group_Mapping.group_id,
+            )
+            .join(
+                models.User_Role,
+                models.User_Role.role_id == models.Role_Permission_Group.role_id,
+            )
+            .filter(models.User_Role.user_id == user.user_id)
+            .distinct()
+            .all()
+        )
+        permissions = [p.permission_code for p in permission_results]
+        # print("permissions in get_user_login_data_by_id", permissions)
+
+        return user, roles, permissions
 
     def update_last_login(self, user_id: int, ip: str):
         user = self.db.query(models.User).filter(models.User.user_id == user_id).first()
