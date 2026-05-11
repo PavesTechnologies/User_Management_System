@@ -31,6 +31,24 @@ class UserService:
 
     def count_users(self):
         return self.dao.count_users()
+    
+    def get_user_by_employee_ids(self, employee_ids):
+        res = dict()
+        for emp_id in employee_ids:
+            user = self.dao.get_user_by_employee_id(emp_id)
+            if user:
+                res[emp_id] = {
+                    "user_id": user.user_id,
+                    "user_uuid": user.user_uuid,
+                    "message": "User found"
+                }
+            else:
+                res[emp_id] = {
+                    "user_id": None,
+                    "user_uuid": None,
+                    "message": "No user found for this employee ID"
+                }
+        return res
 
     def count_active_users(self):
         return self.dao.count_active_users()
