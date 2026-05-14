@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+# Backend/Api_Layer/routes/auth_routes.py
+from fastapi import APIRouter, HTTPException, Request, status, Cookie
+from fastapi.responses import RedirectResponse, JSONResponse
 from ..interfaces.auth import (
     RegisterUser,
     RefreshTokenSchema,
@@ -26,25 +27,62 @@ def register(user_data: RegisterUser, request: Request):
 @router.post("/login")
 def login(credentials: LoginUser, request: Request):
     client_ip = auth_service.get_client_ip(request)
-    return auth_service.login_user(credentials, client_ip, request)
+    result = auth_service.login_user(credentials, client_ip, request)
+    refresh_token = result.pop("refresh_token")
+    response = JSONResponse(content=result)
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+
+        httponly=True,
+        secure=False,   # True in production HTTPS
+        samesite="Lax",
+
+        max_age=7 * 24 * 60 * 60,
+        expires=7 * 24 * 60 * 60,
+
+        path="/"
+    )
+
+    return response
 
 
 # router
 @router.post("/logout")
-def logout(request: Request, body: RefreshTokenSchema):
+def logout(
+    request: Request,
+    refresh_token: str = Cookie(None)
+):
+
     auth_header = request.headers.get("Authorization")
+
     if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing access token")
+        raise HTTPException(
+            status_code=401,
+            detail="Missing access token"
+        )
 
     access_token = auth_header.split(" ")[1]
 
-    access_blacklisted  = blacklist_token(access_token)
-    refresh_blacklisted = blacklist_token(body.refresh_token)
+    blacklist_token(access_token)
 
-    if access_blacklisted or refresh_blacklisted:
-        return {"message": "Logged out successfully"}
-    else:
-        raise HTTPException(status_code=500, detail="Logout failed")
+    if refresh_token:
+        blacklist_token(refresh_token)
+
+    response = JSONResponse(
+        content={
+            "message": "Logged out successfully"
+        }
+    )
+
+    # IMPORTANT
+    response.delete_cookie(
+        key="refresh_token",
+        path="/"
+    )
+
+    return response
 
 
 @router.get("/ms-login")
@@ -72,7 +110,24 @@ def handle_microsoft_callback(code: str, request: Request):
     try:
         # print("Received code:", code)
         client_ip = auth_service.get_client_ip(request)
-        return auth_service.handle_microsoft_callback(code, client_ip, request)
+        result = auth_service.handle_microsoft_callback(code, client_ip, request)
+        refresh_token = result.pop("refresh_token")
+        response = JSONResponse(content=result)
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+
+            httponly=True,
+            secure=False,   # True in production HTTPS
+            samesite="Lax",
+
+            max_age=7 * 24 * 60 * 60,
+            expires=7 * 24 * 60 * 60,
+
+            path="/"
+        )
+        return response
     except HTTPException as http_exc:
         print("HTTPException:", http_exc.status_code, http_exc.detail)
         raise http_exc
@@ -106,8 +161,29 @@ def change_password_first_login(payload: ChangePasswordFirstLogin, request: Requ
 
 @router.post("/refresh")
 def refresh_token(
-    body: RefreshTokenSchema,   # { refresh_token: str }
-    request: Request
+    request: Request,
+    refresh_token: str = Cookie(None)
 ):
-    return auth_service.refresh_token(body.refresh_token, request)
+    if not refresh_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing refresh token"
+        )
+    result = auth_service.refresh_token(refresh_token, request)
+    new_refresh_token = result.pop("refresh_token")
+    response = JSONResponse(content=result)
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+
+        httponly=True,
+        secure=False,   # True in production HTTPS
+        samesite="Lax",
+
+        max_age=7 * 24 * 60 * 60,
+        expires=7 * 24 * 60 * 60,
+
+        path="/"
+    )
+    return response
     
