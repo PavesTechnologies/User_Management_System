@@ -38,3 +38,6 @@ class ChangePasswordFirstLogin(BaseModel):
 class PermissionCheck(BaseModel):
     method: str
     path: str
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token:str
