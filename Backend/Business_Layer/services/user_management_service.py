@@ -342,6 +342,7 @@ class UserService:
 
                 cleaned_rows.append(
                     {
+                        "user_id":  int(employee_id) if employee_id else None,
                         "first_name": first_name,
                         "last_name": last_name,
                         "mail": mail,
