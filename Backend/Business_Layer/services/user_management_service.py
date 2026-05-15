@@ -418,6 +418,7 @@ class UserService:
         # Step 6: Create user objects
         user_objects = [
             models.User(
+                user_id=int(r["employee_id"]) if r["employee_id"] else None,
                 user_uuid=r["user_uuid"],
                 first_name=r["first_name"],
                 last_name=r["last_name"],
