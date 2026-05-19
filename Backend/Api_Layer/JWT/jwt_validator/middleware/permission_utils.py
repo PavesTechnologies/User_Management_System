@@ -38,9 +38,9 @@ def check_permission(path: str, method: str, user: dict, db_session=None):
             path, method
         )
         if not access_point:
-            if "Super Admin" in user.get("roles", []):
+            if "Super_Admin" in user.get("roles", []):
                 print(
-                    "Bypassing permission check because access point is missing and user is Super Admin"
+                    "Bypassing permission check because access point is missing and user is Super_Admin"
                 )
                 return None
             return JSONResponse(
@@ -53,7 +53,7 @@ def check_permission(path: str, method: str, user: dict, db_session=None):
         if (
             (not required_permissions)
             and not access_point.is_public
-            and "Super Admin" not in user.get("roles", [])
+            and "Super_Admin" not in user.get("roles", [])
         ):
             return JSONResponse(
                 status_code=403,
@@ -75,9 +75,9 @@ def check_permission(path: str, method: str, user: dict, db_session=None):
             },
         )
 
-    # 2️⃣ Public or Super Admin bypass
-    if access_point_info.get("is_public") or "Super Admin" in user.get("roles", []):
-        print("Skipping permission check: Public access point or Super Admin user")
+    # 2️⃣ Public or Super_Admin bypass
+    if access_point_info.get("is_public") or "Super_Admin" in user.get("roles", []):
+        print("Skipping permission check: Public access point or Super_Admin user")
         return None  # allowed
 
     # 3️⃣ Actual permission check
