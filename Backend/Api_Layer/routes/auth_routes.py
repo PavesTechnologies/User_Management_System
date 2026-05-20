@@ -7,6 +7,7 @@ from ..interfaces.auth import (
     LoginUser,
     ForgotPassword,
     ChangePasswordFirstLogin,
+    ChangePassword
 )
 from ...Business_Layer.services.auth_service import AuthService
 from ...config.env_loader import get_env_var
@@ -186,4 +187,8 @@ def refresh_token(
         path="/"
     )
     return response
-    
+
+@router.put("/change-password")
+def change_password(request: Request, payLoad: ChangePassword):
+    return auth_service.change_password(
+        payLoad, request)
