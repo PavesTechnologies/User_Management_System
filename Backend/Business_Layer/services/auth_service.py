@@ -10,6 +10,7 @@ from ...Api_Layer.interfaces.auth import (
     LoginUser,
     ForgotPassword,
     ChangePasswordFirstLogin,
+    ChangePassword,
 )
 from ...Data_Access_Layer.dao.auth_dao import AuthDAO
 from ...Data_Access_Layer.models import models
@@ -202,7 +203,9 @@ class AuthService:
         # ── Step 4: Blacklist old refresh token ───────────────────
         # ✅ reuse blacklist_token as-is
         # But blacklist_token takes full token string, not jti!
-        blacklist_token(refresh_token_str)   # ✅ your existing signature
+        # blacklist_token(refresh_token_str)   # ✅ your existing signature
+        if blacklist_token(refresh_token_str):
+            print("Old refresh token blacklisted")
 
         # ── Step 5: Issue new tokens ──────────────────────────────
         new_access_token  = token_create(token_data, request=request, db=dao.db)
@@ -342,6 +345,43 @@ class AuthService:
             )
         dao.password_last_updated(user.user_id)
         return {"message": "Password updated and user activated"}
+    
+    def change_password(self, payload: ChangePassword, request: Request):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401, detail="Missing or invalid Authorization header"
+            )
+        token = auth_header.split(" ")[1]
+        user = validate_jwt_token(token)
+        user_mail = user.get("email")
+        dao = self._get_dao()
+
+        user = dao.get_user_by_email(user_mail)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        new_password = payload.new_password
+        confirm_password = payload.confirm_password
+
+        if new_password != confirm_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
+            )
+
+        validate_password_strength(new_password)
+
+        new_hashed_password = hash_password(new_password)
+
+        if not dao.update_user_password(user, new_hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update password",
+            )
+
+        return {"message": "Password changed successfully"}
 
     def change_password_first_login(
         self, payload: ChangePasswordFirstLogin, user_id: int

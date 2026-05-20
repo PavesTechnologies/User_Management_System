@@ -71,12 +71,12 @@ def update_user_by_id(
     request: Request,
     service: ProfileService = Depends(get_profile_service),
 ):
-    """Allow Admin/Super Admin to edit any profile or self-edit."""
+    """Allow Admin/Super_Admin to edit any profile or self-edit."""
     current_user = request.state.user
     roles = [role.lower() for role in current_user.get("roles", [])]
 
-    # Condition 1: Admin or Super Admin can edit any profile
-    if "admin" in roles or "super admin" in roles:
+    # Condition 1: Admin or Super_Admin can edit any profile
+    if "admin" in roles or "Super_Admin" in roles:
         return service.update_user_by_id(user_id, profile, current_user)
 
     # Condition 2: Allow only self-edit

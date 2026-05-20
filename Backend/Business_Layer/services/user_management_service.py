@@ -82,10 +82,10 @@ class UserService:
         user_uuid = user.user_uuid
         user_roles = self.get_user_roles_by_uuid(user_uuid)
 
-        if "Super Admin" not in current_user_roles and "Super Admin" in user_roles:
+        if "Super_Admin" not in current_user_roles and "Super_Admin" in user_roles:
             raise HTTPException(
                 status_code=403,
-                detail="Only Super Admins can edit Super Admin accounts.",
+                detail="Only Super_Admins can edit Super_Admin accounts.",
             )
 
         return user
@@ -629,10 +629,10 @@ class UserService:
         user_uuid = user.user_uuid
         user_roles = self.get_user_roles_by_uuid(user_uuid)
 
-        if "Super Admin" not in current_user_roles and "Super Admin" in user_roles:
+        if "Super_Admin" not in current_user_roles and "Super_Admin" in user_roles:
             raise HTTPException(
                 status_code=403,
-                detail="Only Super Admins can delete Super Admin accounts.",
+                detail="Only Super_Admins can delete Super_Admin accounts.",
             )
 
         self.dao.deactivate_user(user)
@@ -657,10 +657,10 @@ class UserService:
         user_roles = self.get_user_roles_by_uuid(user_uuid)
 
         # Restrict privilege escalation
-        if "Super Admin" not in current_user_roles and "Super Admin" in user_roles:
+        if "Super_Admin" not in current_user_roles and "Super_Admin" in user_roles:
             raise HTTPException(
                 status_code=403,
-                detail="Only Super Admins can activate Super Admin accounts.",
+                detail="Only Super_Admins can activate Super_Admin accounts.",
             )
 
         self.dao.activate_user(user)

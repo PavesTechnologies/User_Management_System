@@ -462,7 +462,7 @@ class UserDAO:
         admin_ids = (
             self.db.query(models.User_Role.user_id)
             .join(models.Role)
-            .filter(models.Role.role_name.in_(["Admin", "Super Admin"]))
+            .filter(models.Role.role_name.in_(["Admin", "Super_Admin"]))
             .distinct()
             .all()
         )
@@ -472,7 +472,7 @@ class UserDAO:
         return (
             self.db.query(models.User_Role.user_id)
             .join(models.Role)
-            .filter(models.Role.role_name.in_(["Admin", "Super Admin"]))
+            .filter(models.Role.role_name.in_(["Admin", "Super_Admin"]))
             .subquery()
         )
 

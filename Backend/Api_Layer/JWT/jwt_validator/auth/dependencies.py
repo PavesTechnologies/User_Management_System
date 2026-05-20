@@ -21,7 +21,7 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme
 
 def admin_required(current_user: dict = Depends(get_current_user)):
     roles = current_user.get("roles", [])
-    if "Admin" not in roles and "Super Admin" not in roles:
+    if "Admin" not in roles and "Super_Admin" not in roles:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 

@@ -82,7 +82,7 @@ class RoleService:
     def update_role_by_uuid(self, role_uuid: str, role_data: RoleBase, **kwargs):
         role = role_dao.get_role_by_uuid(self.db, role_uuid)
         # protect mandatory roles
-        mandatory_roles = ["Admin", "Super Admin", "HR", "General"]
+        mandatory_roles = ["Admin", "Super_Admin", "HR", "General"]
         if role and role.role_name in mandatory_roles:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -114,7 +114,7 @@ class RoleService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
             )
         # protect mandatory roles
-        mandatory_roles = ["Admin", "Super Admin", "HR", "General"]
+        mandatory_roles = ["Admin", "Super_Admin", "HR", "General"]
         if role.role_name in mandatory_roles:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -156,7 +156,7 @@ class RoleService:
 
         role_uuids = list(set(role_uuids))
 
-        mandatory_roles = ["Admin", "Super Admin", "HR", "General"]
+        mandatory_roles = ["Admin", "Super_Admin", "HR", "General"]
 
         deleted_roles = []
         failed_roles = []
