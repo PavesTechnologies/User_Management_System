@@ -346,6 +346,18 @@ class AuthService:
         dao.password_last_updated(user.user_id)
         return {"message": "Password updated and user activated"}
     
+    def first_time_login_check(self, email: str):
+        dao = self._get_dao()
+        # validate_email_format(email)
+        # user = dao.get_user_by_email(email)
+        # if not user:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail="User not found with this email",
+        #     )
+        is_first_time = dao.first_time_login_check(email)
+        return {"first_time_login": is_first_time}
+
     def change_password(self, payload: ChangePassword, request: Request):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
