@@ -188,6 +188,11 @@ def refresh_token(
     )
     return response
 
+@router.get("/first-time-login-check/{email}")
+def first_time_login_check(email: str):
+    return auth_service.first_time_login_check(email)
+
+
 @router.put("/change-password")
 def change_password(request: Request, payLoad: ChangePassword):
     return auth_service.change_password(

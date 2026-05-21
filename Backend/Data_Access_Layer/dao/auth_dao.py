@@ -151,6 +151,15 @@ class AuthDAO:
         if user.last_login_at is None or user.password_last_updated is None:
             return True
         return False
+    
+    def first_time_login_check(self, email: str) -> bool:
+        user = self.db.query(models.User).filter(models.User.mail == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if user.password_last_updated is None:
+            return True
+        return False
 
     def update_user_password(self, user: models.User, new_hashed_password: str) -> bool:
         try:
