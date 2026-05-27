@@ -12,14 +12,30 @@ import time
 class JWTMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         print("JWT Middleware - ENTERING")
+        path = request.url.path
         t_start = time.time()
-        public_paths = ["/docs", "/redoc", "/openapi.json", "/auth", "/.well-known"]
+        public_paths = [
+            "/ums/docs",
+            "/ums/redoc",
+            "/ums/openapi.json",
+            "/ums/favicon.ico",
+            "/favicon.ico",
+            "/ums/auth",
+            "/ums/.well-known",
+        ]
+
+        excluded_paths = [
+            "/ums/auth/first-login/change-password",
+        ]
+
         if (
             request.method == "OPTIONS"
-            or any(request.url.path.startswith(p) for p in public_paths)
-            and request.url.path != "/auth/first-login/change-password"
+            or (
+                any(path.startswith(p) for p in public_paths)
+                and path not in excluded_paths
+            )
         ):
-            print(f"JWT Middleware - Skipping: {request.url.path}")
+            print(f"JWT Middleware - Skipping: {path}")
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization")

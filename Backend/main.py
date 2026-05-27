@@ -1,5 +1,5 @@
 # main.py
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from .Api_Layer.JWT.jwt_validator.middleware.jwt_middleware import JWTMiddleware
@@ -36,7 +36,12 @@ logger = logging.getLogger(__name__)
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="User Management System")
+app = FastAPI(
+    title="User Management System",
+    docs_url="/ums/docs",
+    redoc_url="/ums/redoc",
+    openapi_url="/ums/openapi.json",
+)
 
 FRONTEND_URL = get_env_var("FRONTEND_URL")
 
@@ -125,38 +130,65 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
+api_router = APIRouter(prefix="/ums")
+
 # Route imports
-app.include_router(openid_endpoint.router, prefix="", tags=["Login Management"])
-app.include_router(auth_routes.router, prefix="/auth", tags=["Login Management"])
-app.include_router(otp_routes.router, prefix="/auth", tags=["OTP Management"])
-app.include_router(
-    profile_routes.router, prefix="/general_user", tags=["General User Management"]
+api_router.include_router(
+    openid_endpoint.router,
+    prefix="",
+    tags=["Login Management"],
 )
-app.include_router(
+
+api_router.include_router(
+    auth_routes.router,
+    prefix="/auth",
+    tags=["Login Management"],
+)
+
+api_router.include_router(
+    otp_routes.router,
+    prefix="/auth",
+    tags=["OTP Management"],
+)
+
+api_router.include_router(
+    profile_routes.router,
+    prefix="/general_user",
+    tags=["General User Management"],
+)
+
+api_router.include_router(
     user_management_routes.router,
     prefix="/admin/users",
     tags=["Admin - User Management"],
 )
-app.include_router(
+
+api_router.include_router(
     role_management_routes.router,
     prefix="/admin/roles",
     tags=["Admin - Role Management"],
 )
-app.include_router(
+
+api_router.include_router(
     permission_routes.router,
     prefix="/admin/permissions",
     tags=["Admin - Permission Management"],
 )
-app.include_router(
+
+api_router.include_router(
     permission_group_route.router,
     prefix="/admin/groups",
     tags=["Admin - Permission Group Management"],
 )
-app.include_router(
+
+api_router.include_router(
     access_point_routes.router,
     prefix="/admin/access-points",
     tags=["Admin - Access Point Management"],
 )
+
+# IMPORTANT
+app.include_router(api_router)
 
 
 @app.get("/")

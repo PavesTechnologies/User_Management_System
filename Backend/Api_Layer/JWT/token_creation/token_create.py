@@ -10,6 +10,7 @@ from ....Business_Layer.utils.generate_uuid7 import generate_uuid7
 ACCESS_TOKEN_EXPIRE_MINUTES = int(get_env_var("ACCESS_TOKEN_EXPIRE_MINUTES"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(get_env_var("REFRESH_TOKEN_EXPIRE_DAYS"))
 KEYS_CACHE_TTL = 300  # refresh keys every 5 minutes
+ISSUER = get_env_var("ALLOWED_ISSUERS").split(",")[0]  # use first as default
 
 _private_key = None
 _public_key = None
@@ -18,12 +19,12 @@ _kid = None
 _keys_loaded_at = 0  # timestamp, not bool
 
 
-def get_issuer_from_request(request) -> str:
-    scheme = request.url.scheme
-    host = request.headers.get("host")
-    issuer = f"{scheme}://{host}"
-    print("Determined Issuer from request:", issuer)
-    return issuer
+# def get_issuer_from_request(request) -> str:
+#     scheme = request.url.scheme
+#     host = request.headers.get("host")
+#     issuer = f"{scheme}://{host}"
+#     print("Determined Issuer from request:", issuer)
+#     return issuer
 
 
 def _load_keys(db=None):
@@ -46,10 +47,11 @@ def token_create(token_data: dict, request=None, issuer=None, db=None) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     jti = generate_uuid7()
 
-    if issuer is None and request is not None:
-        issuer = get_issuer_from_request(request)
-    elif issuer is None:
-        raise ValueError("Either 'request' or 'issuer' must be provided")
+    # if issuer is None and request is not None:
+    #     issuer = get_issuer_from_request(request)
+    # elif issuer is None:
+    #     issuer = ISSUER
+    issuer = ISSUER
 
     payload = {
         "jti": jti,
@@ -72,12 +74,11 @@ def refresh_token_create(token_data: dict, request=None, issuer=None, db=None) -
 
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)  # 7 days
     jti = generate_uuid7()
-
-    if issuer is None and request is not None:
-        issuer = get_issuer_from_request(request)
-    elif issuer is None:
-        raise ValueError("Either 'request' or 'issuer' must be provided")
-
+    # if issuer is None and request is not None:
+    #     issuer = get_issuer_from_request(request)
+    # elif issuer is None:
+    #     raise ValueError("Either 'request' or 'issuer' must be provided")
+    issuer = ISSUER
     payload = {
         # --- Identity (minimal) ---
         "jti": jti,                          # unique id → for blacklisting
