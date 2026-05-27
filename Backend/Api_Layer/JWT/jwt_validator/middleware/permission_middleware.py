@@ -13,12 +13,13 @@ class OptimizedPermissionMiddleware(BaseHTTPMiddleware):
         print("Permission Middleware - ENTERING")
 
         public_paths = [
-            "/docs",
-            "/redoc",
-            "/openapi.json",
-            "/auth",
-            "/.well-known",
-            "/middleware/check-permission",
+            "/ums/docs",
+            "/ums/redoc",
+            "/ums/openapi.json",
+            "/ums/favicon.ico",
+            "/favicon.ico",
+            "/ums/auth",
+            "/ums/.well-known",
         ]
 
         path = request.url.path
