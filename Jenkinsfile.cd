@@ -1,0 +1,2 @@
+@Library('paves-shared-lib') _ 
+deployToDev(serviceName: 'ums', serviceType: 'java', ecrRepo: 'paves/ums-dev')
