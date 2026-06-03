@@ -1,32 +1,52 @@
-version: "3.9"
-
 services:
 
-  # mysql:
-  #   image: mysql:8.0
-  #   container_name: mysql_container
-  #   restart: always
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: Jagadish@1711
-  #     MYSQL_DATABASE: ums_db
-  #   ports:
-  #     - "3307:3306"
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-
   ums:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ums_service
-    image: pavesadmin/intranet-ums:latest
+    image: ums-image
+    container_name: ums
     env_file:
-      - Backend/.env
+      - C:/Users/Jagadish.Pannala/UMS/User_Management_System/Backend/.env
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - mysql
-    restart: always
+    networks:
+      - intranet-network
 
-volumes:
-  mysql_data:
+  pms:
+    image: ajay1813/pms-image:v1
+    container_name: pms
+    env_file:
+      - C:\Users\Jagadish.Pannala\UMS\.env.pms
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ums
+    networks:
+      - intranet-network
+
+  tms:
+    image: 743737183908.dkr.ecr.ap-south-1.amazonaws.com/paves/tms-dev:latest
+    container_name: tms
+    env_file:
+     - C:\Users\Jagadish.Pannala\UMS\.env.tms
+    ports:
+     - "5000:5000"
+    depends_on:
+     - ums
+    networks:
+     - intranet-network
+
+  lms:
+    image: swarnaraj08/lms:latest
+    container_name: lms
+    env_file:
+     - C:\Users\Jagadish.Pannala\UMS\.env.lms
+    ports:
+      - "9999:9999"
+    depends_on:
+     - ums
+    networks:
+     - intranet-network
+
+
+networks:
+  intranet-network:
+    driver: bridge

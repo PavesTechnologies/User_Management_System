@@ -1,5 +1,7 @@
 import smtplib
 import random
+import time
+import traceback
 from email.message import EmailMessage
 
 from ...config.env_loader import get_env_var
@@ -11,44 +13,182 @@ EMAIL_PORT = int(get_env_var("EMAIL_PORT"))
 FRONTEND_URL = get_env_var("FRONTEND_URL")
 
 
+# def send_email(
+#     to_email: str,
+#     subject: str,
+#     content: str,
+# ):
+#     msg = EmailMessage()
+
+#     msg["Subject"] = subject
+#     msg["From"] = EMAIL_USER
+#     msg["To"] = to_email
+
+#     # Plain text fallback
+#     msg.set_content(
+#         "This email requires an HTML-supported email client."
+#     )
+
+#     # HTML content
+#     msg.add_alternative(content, subtype="html")
+
+#     # SMTP connection with timeout
+#     with smtplib.SMTP(
+#         EMAIL_HOST,
+#         EMAIL_PORT,
+#         timeout=30,
+#     ) as smtp:
+
+#         smtp.ehlo()
+
+#         smtp.starttls()
+
+#         smtp.ehlo()
+
+#         smtp.login(
+#             EMAIL_USER,
+#             EMAIL_PASSWORD,
+#         )
+
+#         smtp.send_message(msg)
+
 def send_email(
     to_email: str,
     subject: str,
     content: str,
 ):
-    msg = EmailMessage()
+    overall_start = time.time()
 
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_USER
-    msg["To"] = to_email
+    try:
+        print(f"[EMAIL] Starting email send to {to_email}")
 
-    # Plain text fallback
-    msg.set_content(
-        "This email requires an HTML-supported email client."
-    )
+        msg = EmailMessage()
 
-    # HTML content
-    msg.add_alternative(content, subtype="html")
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_USER
+        msg["To"] = to_email
 
-    # SMTP connection with timeout
-    with smtplib.SMTP(
-        EMAIL_HOST,
-        EMAIL_PORT,
-        timeout=30,
-    ) as smtp:
+        msg.set_content(
+            "This email requires an HTML-supported email client."
+        )
+
+        msg.add_alternative(
+            content,
+            subtype="html",
+        )
+
+        # -----------------------------
+        # SMTP CONNECT
+        # -----------------------------
+        step_start = time.time()
+
+        smtp = smtplib.SMTP(
+            EMAIL_HOST,
+            EMAIL_PORT,
+            timeout=30,
+        )
+
+        print(
+            f"[EMAIL] SMTP Connect: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # Uncomment if you want SMTP protocol logs
+        # smtp.set_debuglevel(1)
+
+        # -----------------------------
+        # EHLO
+        # -----------------------------
+        step_start = time.time()
 
         smtp.ehlo()
+
+        print(
+            f"[EMAIL] EHLO: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # -----------------------------
+        # STARTTLS
+        # -----------------------------
+        step_start = time.time()
 
         smtp.starttls()
 
+        print(
+            f"[EMAIL] STARTTLS: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # -----------------------------
+        # EHLO AGAIN
+        # -----------------------------
+        step_start = time.time()
+
         smtp.ehlo()
+
+        print(
+            f"[EMAIL] EHLO2: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # -----------------------------
+        # LOGIN
+        # -----------------------------
+        step_start = time.time()
 
         smtp.login(
             EMAIL_USER,
             EMAIL_PASSWORD,
         )
 
+        print(
+            f"[EMAIL] LOGIN: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # -----------------------------
+        # SEND EMAIL
+        # -----------------------------
+        step_start = time.time()
+
         smtp.send_message(msg)
+
+        print(
+            f"[EMAIL] SEND_MESSAGE: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        # -----------------------------
+        # QUIT
+        # -----------------------------
+        step_start = time.time()
+
+        smtp.quit()
+
+        print(
+            f"[EMAIL] QUIT: "
+            f"{time.time() - step_start:.2f}s"
+        )
+
+        print(
+            f"[EMAIL] TOTAL TIME: "
+            f"{time.time() - overall_start:.2f}s"
+        )
+
+    except Exception as e:
+        print(
+            f"[EMAIL] ERROR: {str(e)}"
+        )
+
+        traceback.print_exc()
+
+        print(
+            f"[EMAIL] FAILED AFTER: "
+            f"{time.time() - overall_start:.2f}s"
+        )
+
+        raise
 
 
 def generate_otp(length: int = 6) -> str:
