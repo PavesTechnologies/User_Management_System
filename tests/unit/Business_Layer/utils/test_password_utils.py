@@ -80,3 +80,30 @@ class TestVerifyPassword:
 
         with pytest.raises(HTTPException):
             verify_password("Secret123 ", hashed)   # trailing space
+
+
+class TestHashPassword:
+    def test_hash_password_returns_string(self):
+        from Backend.Business_Layer.utils.password_utils import hash_password
+        result = hash_password("MyPassword123")
+        assert isinstance(result, str)
+        assert result.startswith("$2b$")
+
+    def test_hash_password_different_hashes_same_input(self):
+        """bcrypt produces unique hashes (salt) for the same input."""
+        from Backend.Business_Layer.utils.password_utils import hash_password
+        h1 = hash_password("MyPassword")
+        h2 = hash_password("MyPassword")
+        assert h1 != h2
+
+
+class TestCheckPasswordMatch:
+    def test_returns_true_for_correct_password(self):
+        from Backend.Business_Layer.utils.password_utils import hash_password, check_password_match
+        hashed = hash_password("Correct123")
+        assert check_password_match("Correct123", hashed) is True
+
+    def test_returns_false_for_wrong_password(self):
+        from Backend.Business_Layer.utils.password_utils import hash_password, check_password_match
+        hashed = hash_password("Correct123")
+        assert check_password_match("Wrong123", hashed) is False

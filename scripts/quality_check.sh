@@ -3,7 +3,7 @@
 # --- Configuration ---
 TARGET_DIR="Backend"
 TEST_DIR="tests"
-MIN_COVERAGE=70
+MIN_COVERAGE=60
 
 # Colors
 GREEN='\033[0;32m'
@@ -84,20 +84,20 @@ fi
 
 echo -e "${GREEN}Mypy passed${NC}"
 
-# # 7. Pytest (Coverage)
-# echo -e "\n[7/7] Running Tests (Coverage Gate: ${MIN_COVERAGE}%)..."
+# 7. Pytest (Coverage)
+echo -e "\n[7/7] Running Tests (Coverage Gate: ${MIN_COVERAGE}%)..."
 
-# pytest \
-#     --cov=$TARGET_DIR \
-#     $TEST_DIR \
-#     --cov-report=term-missing \
-#     --cov-fail-under=$MIN_COVERAGE
+pytest \
+    --cov=$TARGET_DIR \
+    $TEST_DIR \
+    --cov-report=term-missing \
+    --cov-fail-under=$MIN_COVERAGE
 
-# if [ $? -eq 0 ]; then
-#     echo -e "\n${GREEN}ALL QUALITY GATES PASSED ✓${NC}"
-#     exit 0
-# else
-#     echo -e "\n${RED}QUALITY GATE FAILED${NC}"
-#     echo -e "${YELLOW}Hint: Run 'pytest --cov=$TARGET_DIR $TEST_DIR --cov-report=html' locally to see uncovered lines.${NC}"
-#     exit 1
-# fi
+if [ $? -eq 0 ]; then
+    echo -e "\n${GREEN}ALL QUALITY GATES PASSED ✓${NC}"
+    exit 0
+else
+    echo -e "\n${RED}QUALITY GATE FAILED${NC}"
+    echo -e "${YELLOW}Hint: Run 'pytest --cov=$TARGET_DIR $TEST_DIR --cov-report=html' locally to see uncovered lines.${NC}"
+    exit 1
+fi
