@@ -387,15 +387,17 @@ class PermissionService:
             )
 
         return {"message": f"Permission with ID {permission_uuid} deleted successfully"}
-    
+
     @audit_action_with_request(
-    action_type="DELETE",
-    entity_type="Permissions",
-    capture_old_data=True,
-    capture_new_data=False,
-    description="Deleted permissions",
+        action_type="DELETE",
+        entity_type="Permissions",
+        capture_old_data=True,
+        capture_new_data=False,
+        description="Deleted permissions",
     )
-    def delete_permissions(self, permission_uuids: list[str], audit_data=None, **kwargs):
+    def delete_permissions(
+        self, permission_uuids: list[str], audit_data=None, **kwargs
+    ):
         if audit_data is None:
             audit_data = {}
 

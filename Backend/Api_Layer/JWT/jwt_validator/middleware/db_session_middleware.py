@@ -1,4 +1,3 @@
-import traceback
 import logging
 import time
 
@@ -45,7 +44,7 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
 
             return response
 
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
 
             logger.exception("🔴 DB Middleware - SQLAlchemyError")
 

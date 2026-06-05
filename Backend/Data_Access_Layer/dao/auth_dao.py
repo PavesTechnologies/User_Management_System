@@ -79,7 +79,7 @@ class AuthDAO:
         print("permissions in get_user_login_data", permissions)
 
         return user, roles, permissions
-    
+
     def get_user_login_data_by_id(self, user_id: int):
         # Step 1: Get user
         user = (
@@ -151,7 +151,7 @@ class AuthDAO:
         if user.last_login_at is None or user.password_last_updated is None:
             return True
         return False
-    
+
     def first_time_login_check(self, email: str) -> bool:
         user = self.db.query(models.User).filter(models.User.mail == email).first()
         if not user:

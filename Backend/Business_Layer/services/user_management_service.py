@@ -31,7 +31,7 @@ class UserService:
 
     def count_users(self):
         return self.dao.count_users()
-    
+
     def get_user_by_employee_ids(self, employee_ids):
         res = dict()
         for emp_id in employee_ids:
@@ -40,13 +40,13 @@ class UserService:
                 res[emp_id] = {
                     "user_id": user.user_id,
                     "user_uuid": user.user_uuid,
-                    "message": "User found"
+                    "message": "User found",
                 }
             else:
                 res[emp_id] = {
                     "user_id": None,
                     "user_uuid": None,
-                    "message": "No user found for this employee ID"
+                    "message": "No user found for this employee ID",
                 }
         return res
 
@@ -189,7 +189,6 @@ class UserService:
         request: Request = None,
         audit_data: dict = None,
     ):
-
         """
         Bulk create users from Excel with validation, audit logs, and partial success handling.
         Skips invalid rows and continues with valid ones.
@@ -313,11 +312,15 @@ class UserService:
                 last_name = clean_string(row.get("last_name"), "last_name")
                 mail = clean_string(row.get("mail"), "mail").lower()
                 contact = clean_contact(row.get("contact"))
-                employee_id = clean_string(row.get("employee_id"), "employee_id", required=False)
+                employee_id = clean_string(
+                    row.get("employee_id"), "employee_id", required=False
+                )
                 # designation = clean_string(row.get("Designation"), "Designation", required=False)
                 # department = clean_string(row.get("Department"), "Department", required=False)
                 # is_active = parse_status_to_is_active(row.get("Status"))
-                is_active = True  # Default to active, or use the Status column if you want
+                is_active = (
+                    True  # Default to active, or use the Status column if you want
+                )
 
                 user_uuid = row.get("user_uuid")
 
@@ -342,7 +345,7 @@ class UserService:
 
                 cleaned_rows.append(
                     {
-                        "user_id":  int(employee_id) if employee_id else None,
+                        "user_id": int(employee_id) if employee_id else None,
                         "first_name": first_name,
                         "last_name": last_name,
                         "mail": mail,
@@ -380,7 +383,9 @@ class UserService:
             [r["mail"] for r in cleaned_rows]
         )
 
-        existing_emails = {email.lower() for email in existing_emails} if existing_emails else set()
+        existing_emails = (
+            {email.lower() for email in existing_emails} if existing_emails else set()
+        )
 
         remaining_rows = []
 
@@ -427,7 +432,6 @@ class UserService:
                 password=r["hashed_password"],
                 is_active=r["is_active"],
                 employee_id=r["employee_id"],
-
                 # Add these only if these columns exist in your User model
                 # designation=r["designation"],
                 # department=r["department"],

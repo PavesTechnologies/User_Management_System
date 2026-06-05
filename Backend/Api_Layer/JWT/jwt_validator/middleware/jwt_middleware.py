@@ -28,12 +28,8 @@ class JWTMiddleware(BaseHTTPMiddleware):
             "/ums/auth/first-login/change-password",
         ]
 
-        if (
-            request.method == "OPTIONS"
-            or (
-                any(path.startswith(p) for p in public_paths)
-                and path not in excluded_paths
-            )
+        if request.method == "OPTIONS" or (
+            any(path.startswith(p) for p in public_paths) and path not in excluded_paths
         ):
             print(f"JWT Middleware - Skipping: {path}")
             return await call_next(request)

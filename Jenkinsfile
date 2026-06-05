@@ -51,7 +51,7 @@ pipeline {
                 echo "Loading environment variables..."
                 sh """
                 aws secretsmanager get-secret-value \
-                    --secret-id intranet/ums/env \
+                    --secret-id dev-ums \
                     --region ap-south-1 \
                     --query SecretString \
                     --output text | jq -r 'to_entries|map("\\(.key)=\\(.value)")|.[]' > Backend/.env

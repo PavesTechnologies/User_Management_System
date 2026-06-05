@@ -136,12 +136,12 @@ class PermissionGroupService:
             "created_at": str(group.created_at),
         }
         return {"message": "Permission group deleted successfully"}
-    
+
     @audit_action_with_request(
-    action_type="DELETE",
-    entity_type="Permission_Group",
-    capture_old_data=True,
-    description="Deleted permission groups",
+        action_type="DELETE",
+        entity_type="Permission_Group",
+        capture_old_data=True,
+        description="Deleted permission groups",
     )
     def delete_groups_bulk(self, group_uuids: list[str], **kwargs):
         audit_data = kwargs.get("audit_data", {})
@@ -165,27 +165,33 @@ class PermissionGroupService:
                 group = self.dao.get_group_by_uuid(group_uuid)
 
                 if not group:
-                    failed_groups.append({
-                        "group_uuid": group_uuid,
-                        "reason": "Permission group not found",
-                    })
+                    failed_groups.append(
+                        {
+                            "group_uuid": group_uuid,
+                            "reason": "Permission group not found",
+                        }
+                    )
                     continue
 
                 if default_group and group.group_uuid == default_group.group_uuid:
-                    failed_groups.append({
-                        "group_uuid": group_uuid,
-                        "reason": "Cannot delete the default permission group",
-                    })
+                    failed_groups.append(
+                        {
+                            "group_uuid": group_uuid,
+                            "reason": "Cannot delete the default permission group",
+                        }
+                    )
                     continue
 
                 # Store old data before delete for audit
-                deleted_groups_old_data.append({
-                    "group_id": group.group_id,
-                    "group_name": group.group_name,
-                    "group_uuid": group.group_uuid,
-                    "created_by": group.created_by,
-                    "created_at": str(group.created_at),
-                })
+                deleted_groups_old_data.append(
+                    {
+                        "group_id": group.group_id,
+                        "group_name": group.group_name,
+                        "group_uuid": group.group_uuid,
+                        "created_by": group.created_by,
+                        "created_at": str(group.created_at),
+                    }
+                )
 
                 # Clear relationships first
                 self.dao.clear_group_permissions(group.group_id)
@@ -195,10 +201,12 @@ class PermissionGroupService:
                 deleted = self.dao.delete_group(group.group_id)
 
                 if not deleted:
-                    failed_groups.append({
-                        "group_uuid": group_uuid,
-                        "reason": "Failed to delete permission group",
-                    })
+                    failed_groups.append(
+                        {
+                            "group_uuid": group_uuid,
+                            "reason": "Failed to delete permission group",
+                        }
+                    )
 
             if not deleted_groups_old_data:
                 self.db.rollback()

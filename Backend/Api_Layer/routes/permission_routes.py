@@ -8,7 +8,7 @@ from ..interfaces.permission_management import (
     PermissionResponse,
     PermissionBaseCreation,
     BulkPermissionCreationResponse,
-    BulkDeletePermissionsRequest
+    BulkDeletePermissionsRequest,
 )
 
 router = APIRouter()
@@ -46,6 +46,7 @@ def bulk_delete_permissions(
         current_user=request.state.user,
         request=request,
     )
+
 
 @router.get("/{permission_uuid}", response_model=PermissionOut)
 def get_permission(permission_uuid: str, request: Request):

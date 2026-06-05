@@ -52,6 +52,7 @@ FRONTEND_URL = get_env_var("FRONTEND_URL")
 
 #         smtp.send_message(msg)
 
+
 def send_email(
     to_email: str,
     subject: str,
@@ -68,9 +69,7 @@ def send_email(
         msg["From"] = EMAIL_USER
         msg["To"] = to_email
 
-        msg.set_content(
-            "This email requires an HTML-supported email client."
-        )
+        msg.set_content("This email requires an HTML-supported email client.")
 
         msg.add_alternative(
             content,
@@ -88,10 +87,7 @@ def send_email(
             timeout=30,
         )
 
-        print(
-            f"[EMAIL] SMTP Connect: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] SMTP Connect: " f"{time.time() - step_start:.2f}s")
 
         # Uncomment if you want SMTP protocol logs
         # smtp.set_debuglevel(1)
@@ -103,10 +99,7 @@ def send_email(
 
         smtp.ehlo()
 
-        print(
-            f"[EMAIL] EHLO: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] EHLO: " f"{time.time() - step_start:.2f}s")
 
         # -----------------------------
         # STARTTLS
@@ -115,10 +108,7 @@ def send_email(
 
         smtp.starttls()
 
-        print(
-            f"[EMAIL] STARTTLS: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] STARTTLS: " f"{time.time() - step_start:.2f}s")
 
         # -----------------------------
         # EHLO AGAIN
@@ -127,10 +117,7 @@ def send_email(
 
         smtp.ehlo()
 
-        print(
-            f"[EMAIL] EHLO2: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] EHLO2: " f"{time.time() - step_start:.2f}s")
 
         # -----------------------------
         # LOGIN
@@ -142,10 +129,7 @@ def send_email(
             EMAIL_PASSWORD,
         )
 
-        print(
-            f"[EMAIL] LOGIN: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] LOGIN: " f"{time.time() - step_start:.2f}s")
 
         # -----------------------------
         # SEND EMAIL
@@ -154,10 +138,7 @@ def send_email(
 
         smtp.send_message(msg)
 
-        print(
-            f"[EMAIL] SEND_MESSAGE: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] SEND_MESSAGE: " f"{time.time() - step_start:.2f}s")
 
         # -----------------------------
         # QUIT
@@ -166,36 +147,23 @@ def send_email(
 
         smtp.quit()
 
-        print(
-            f"[EMAIL] QUIT: "
-            f"{time.time() - step_start:.2f}s"
-        )
+        print(f"[EMAIL] QUIT: " f"{time.time() - step_start:.2f}s")
 
-        print(
-            f"[EMAIL] TOTAL TIME: "
-            f"{time.time() - overall_start:.2f}s"
-        )
+        print(f"[EMAIL] TOTAL TIME: " f"{time.time() - overall_start:.2f}s")
 
     except Exception as e:
-        print(
-            f"[EMAIL] ERROR: {str(e)}"
-        )
+        print(f"[EMAIL] ERROR: {str(e)}")
 
         traceback.print_exc()
 
-        print(
-            f"[EMAIL] FAILED AFTER: "
-            f"{time.time() - overall_start:.2f}s"
-        )
+        print(f"[EMAIL] FAILED AFTER: " f"{time.time() - overall_start:.2f}s")
 
         raise
 
 
 def generate_otp(length: int = 6) -> str:
     """Generate a numeric OTP of given length."""
-    return "".join(
-        [str(random.randint(0, 9)) for _ in range(length)]
-    )
+    return "".join([str(random.randint(0, 9)) for _ in range(length)])
 
 
 def send_otp_email(to_email: str, otp: str):

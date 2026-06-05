@@ -30,15 +30,17 @@ class Group(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class BulkDeleteRolesRequest(BaseModel):
     role_uuids: List[str]
+
 
 class User_Role_input(BaseModel):
     role_uuid: Optional[str] = Query(None)
     role_name: Optional[str] = Query(None)
+
+
 class User_Role(BaseModel):
     user_id: int
     employee_id: Optional[str]
     role_name: str
-
-
