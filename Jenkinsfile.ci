@@ -103,15 +103,27 @@ pipeline {
     post {
         success {
             echo "✅ CI passed for PR → ${env.TARGET_BRANCH}"
-            // Optional: update GitHub PR status
-            // githubNotify status: 'SUCCESS', description: 'CI passed', context: 'ci/jenkins'
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'All quality gates passed',
+                state: 'SUCCESS'
+            )
         }
         failure {
             echo "❌ CI failed for PR → ${env.TARGET_BRANCH}"
-            // githubNotify status: 'FAILURE', description: 'CI failed', context: 'ci/jenkins'
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'CI failed — check build logs',
+                state: 'FAILURE'
+            )
         }
         aborted {
             echo "⏭️ CI skipped — PR does not target '${env.TARGET_BRANCH}'"
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'CI skipped — wrong target branch',
+                state: 'ERROR'
+            )
         }
         always {
             // Clean up venv and .env to keep workspace tidy
