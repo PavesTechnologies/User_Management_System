@@ -8,13 +8,13 @@ pipeline {
     }
 
     // Trigger on GitHub webhook events
-    triggers {
-        githubPullRequests(
-            triggerMode: 'HEAVY_HOOKS',
-            events: [Open(), Reopened(), NonMergeableStateChanged()],
-            abortRunning: true
-        )
-    }
+    // triggers {
+    //     githubPullRequests(
+    //         triggerMode: 'HEAVY_HOOKS',
+    //         events: [Open(), Reopened(), NonMergeableStateChanged()],
+    //         abortRunning: true
+    //     )
+    // }
 
     stages {
 
