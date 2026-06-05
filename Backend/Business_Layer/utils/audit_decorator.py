@@ -128,15 +128,16 @@ def _get_ip_address(*args, **kwargs) -> Optional[str]:
 
 def _capture_entity_state(
     db: Session, entity_type: str, entity_id: Any
-) -> Optional[Dict]:
+) -> Optional[Dict[str, Any]] | list[Dict[str, Any]]:
     try:
         model_class = getattr(models, entity_type, None)
         if not model_class:
             return None
         if entity_type in ["User_Role", "User_Permission"]:
             return [
-                _serialize_entity(r)
+                s
                 for r in db.query(model_class).filter_by(user_id=entity_id).all()
+                if (s := _serialize_entity(r)) is not None
             ]
         entity = (
             db.query(model_class)
@@ -150,10 +151,10 @@ def _capture_entity_state(
     return None
 
 
-def _serialize_entity(entity) -> Dict[str, Any]:
+def _serialize_entity(entity) -> Optional[Dict[str, Any]]:
     if not entity:
         return None
-    result = {}
+    result: Dict[str, Any] = {}
     for column in entity.__table__.columns:
         value = getattr(entity, column.name)
         if isinstance(value, datetime):
@@ -166,7 +167,7 @@ def _serialize_entity(entity) -> Dict[str, Any]:
 
 
 def _capture_new_data(result, db: Session, entity_type: str, entity_id: Any):
-    new_data = None
+    new_data: Optional[Dict[str, Any]] | list[Dict[str, Any]] = None
     if hasattr(result, "__dict__"):
         new_data = _serialize_entity(result)
         # Try multiple ID field naming conventions

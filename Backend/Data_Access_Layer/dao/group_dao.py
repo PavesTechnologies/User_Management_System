@@ -41,7 +41,7 @@ class PermissionGroupDAO:
         self.db.refresh(new_group)
         return new_group
 
-    def update_group(self, group_uuid: int, group_name: str):
+    def update_group(self, group_uuid: str, group_name: str):
         now = datetime.utcnow()
         group = self.get_group_by_uuid(group_uuid)
         if group:

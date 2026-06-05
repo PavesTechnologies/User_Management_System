@@ -99,7 +99,7 @@ def update_permission_groups_for_role(
     payload: RoleGroupRequest,
     service: RoleService = Depends(get_role_service),
 ):
-    return service.update_permission_groups_for_role(role_id, payload.group_ids)
+    return service.update_permission_groups_for_role(role_id, payload.group_uuids)
 
 
 @router.put("/uuid/{role_uuid}/groups")
@@ -110,7 +110,7 @@ def update_permission_groups_for_role_uuid(
     service: RoleService = Depends(get_role_service),
 ):
     return service.update_permission_groups_for_role_uuid(
-        role_uuid, payload.group_uuids, current_user=request.state.user, request=request
+        role_uuid, payload.group_uuids
     )
 
 

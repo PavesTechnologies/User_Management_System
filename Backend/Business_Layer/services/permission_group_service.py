@@ -13,7 +13,7 @@ class PermissionGroupService:
     def list_groups(self):
         return self.dao.get_all_groups()
 
-    def get_group(self, group_id: int):
+    def get_group(self, group_id: str):
         return self.dao.get_group_by_uuid(group_id)
 
     @audit_action_with_request(

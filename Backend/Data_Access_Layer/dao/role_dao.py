@@ -309,7 +309,7 @@ def remove_permission_groups_from_role(
 
 
 def update_permission_groups_for_role(
-    db: Session, role_id: int, group_uuids: list[int]
+    db: Session, role_id: int, group_uuids: list[str]
 ):
     role = get_role(db, role_id)
     if not role:
@@ -354,7 +354,7 @@ def get_unassigned_permission_groups(db: Session, role_id: int):
 
 
 def get_users_by_role_uuid_or_name(
-    db: Session, role_uuid: str = None, role_name: str = None
+    db: Session, role_uuid: str | None = None, role_name: str | None = None
 ) -> list[dict]:
 
     if not role_uuid and not role_name:

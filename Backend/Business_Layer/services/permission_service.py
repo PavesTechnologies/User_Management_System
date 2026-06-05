@@ -30,10 +30,12 @@ class PermissionService:
         self,
         permission_code: str,
         description: str,
-        group_uuid: str = None,
-        audit_data: dict = None,
+        group_uuid: str | None = None,
+        audit_data: dict | None = None,
         **kwargs,
     ):
+        if audit_data is None:
+            audit_data = {}
         try:
             group_id = None
 
@@ -128,10 +130,12 @@ class PermissionService:
         description="Created Bulk permissions via file upload",
     )
     def bulk_permissions_creation(
-        self, file: UploadFile, audit_data: dict = None, **kwargs
+        self, file: UploadFile, audit_data: dict | None = None, **kwargs
     ):
+        if audit_data is None:
+            audit_data = {}
         # Validate file type
-        if not file.filename.endswith((".xlsx", ".xls")):
+        if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
             raise HTTPException(
                 status_code=400, detail="Only Excel files (.xlsx, .xls) are supported"
             )
@@ -482,7 +486,7 @@ class PermissionService:
         permission_id = self.dao.get_by_uuid(permission_uuid).permission_id
         self.dao.delete_cascade(permission_id)
 
-    def reassign_group(self, permission_uuid: int, group_uuid: int):
+    def reassign_group(self, permission_uuid: str, group_uuid: str):
         if not self.dao.get_by_uuid(permission_uuid):
             raise HTTPException(status_code=404, detail="Permission not found")
         if not self.group_dao.get_group_by_uuid(group_uuid):

@@ -61,7 +61,7 @@ class AuthService:
             # X-Forwarded-For may contain multiple IPs, first is original client
             ip = x_forwarded_for.split(",")[0].strip()
         else:
-            ip = request.client.host
+            ip = request.client.host if request.client is not None else ""
         print("Client IP:", ip)
         return ip
 

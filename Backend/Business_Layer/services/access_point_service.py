@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status, UploadFile
+from uuid import UUID
 import pandas as pd
 import io
 from sqlalchemy.orm import Session
@@ -28,7 +29,7 @@ class AccessPointService:
         self.dao = AccessPointDAO(self.db)
         self.permission_dao = PermissionDAO(self.db)
 
-    def normalize_endpoint(self, endpoint: str) -> str:
+    def normalize_endpoint(self, endpoint: str) -> str | None:
         """
         Convert endpoint with {params} into regex pattern.
         Static endpoints are returned unchanged.
@@ -75,7 +76,7 @@ class AccessPointService:
         ap_dict["access_uuid"] = generate_uuid7()
 
         existing = self.dao.get_access_point_by_path_and_method(
-            ap_dict.get("endpoint_path"), ap_dict.get("method")
+            ap_dict["endpoint_path"], ap_dict["method"]
         )
 
         if existing:
@@ -138,7 +139,7 @@ class AccessPointService:
         audit_data = kwargs.get("audit_data", {})
 
         # Validate file type
-        if not file.filename.endswith((".xlsx", ".xls")):
+        if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Only Excel files (.xlsx, .xls) are supported",
@@ -361,8 +362,6 @@ class AccessPointService:
             is_public=ap.is_public,
             permission_uuid=permission_uuid,
             permission_code=permission_code,
-            created_at=ap.created_at,
-            updated_at=ap.updated_at,
         )
 
     def list_modules(self) -> List[str]:
@@ -462,6 +461,12 @@ class AccessPointService:
         else:
             permission_code = new_permission_code
 
+        if updated_ap is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Access point update failed",
+            )
+
         # ✅ Compare against the OLD SNAPSHOT, not current_ap
         changes = {}
         if updated_ap.endpoint_path != old_snapshot["endpoint_path"]:
@@ -506,7 +511,7 @@ class AccessPointService:
 
         # --- Build and return response ---
         return AccessPointOut(
-            access_uuid=access_uuid,
+            access_uuid=UUID(access_uuid),
             endpoint_path=new_endpoint,
             method=new_method,
             module=new_module,
@@ -616,7 +621,7 @@ class AccessPointService:
         audit_data = kwargs.get("audit_data", {})
 
         # Validate file type
-        if not file.filename.endswith((".xlsx", ".xls")):
+        if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Only Excel files (.xlsx, .xls) are supported",
@@ -790,8 +795,12 @@ class AccessPointService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No mapping found to delete",
             )
-        access_uuid = self.dao.get_access_point_by_id(access_id).access_uuid
-        self.dao.get_access_point_by_path_and_method(access_uuid)
+        ap = self.dao.get_access_point_by_id(access_id)
+        if ap is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Access point not found",
+            )
         self._invalidate_cache(access_id)
         return {"message": "Permission unmapped successfully"}
 

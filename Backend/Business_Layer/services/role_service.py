@@ -44,7 +44,7 @@ class RoleService:
         cleaned = re.sub(r"\s+", " ", role_name.strip())
         return cleaned.lower()
 
-    def _check_duplicate_role(self, role_name: str, exclude_role_id: int = None):
+    def _check_duplicate_role(self, role_name: str, exclude_role_id: int | None = None):
         normalized_new = self._normalize_role_name(role_name)
         roles = role_dao.get_all_roles(self.db)  # returns list of role objects
 
@@ -375,8 +375,8 @@ class RoleService:
                 status_code=500, detail=f"Failed to remove permission groups: {str(e)}"
             )
 
-    def update_permission_groups_for_role(self, role_id: int, group_ids: list[int]):
-        return role_dao.update_permission_groups_for_role(self.db, role_id, group_ids)
+    def update_permission_groups_for_role(self, role_id: int, group_uuids: list[str]):
+        return role_dao.update_permission_groups_for_role(self.db, role_id, group_uuids)
 
     def update_permission_groups_for_role_uuid(
         self, role_uuid: str, group_uuids: list[str]
@@ -394,6 +394,8 @@ class RoleService:
         role = role_dao.get_role_by_uuid(self.db, role_uuid)
         return role_dao.get_unassigned_permission_groups(self.db, role.role_id)
 
-    def get_users_by_role_uuid_or_name(self, role_name: str, role_uuid: str):
+    def get_users_by_role_uuid_or_name(
+        self, role_name: str | None, role_uuid: str | None
+    ):
         print(f"Service received role_uuid: {role_uuid}, role_name: {role_name}")
         return role_dao.get_users_by_role_uuid_or_name(self.db, role_uuid, role_name)

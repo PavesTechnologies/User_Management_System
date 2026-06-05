@@ -76,7 +76,7 @@ class AuthDAO:
             .all()
         )
         permissions = [p.permission_code for p in permission_results]
-        print("permissions in get_user_login_data", permissions)
+        # print("permissions in get_user_login_data", permissions)
 
         return user, roles, permissions
 

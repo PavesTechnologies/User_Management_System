@@ -185,9 +185,9 @@ class UserService:
         self,
         df: pd.DataFrame,
         created_by_user_id: int,
-        current_user: dict = None,
-        request: Request = None,
-        audit_data: dict = None,
+        current_user: dict | None = None,
+        request: Request | None = None,
+        audit_data: dict | None = None,
     ):
         """
         Bulk create users from Excel with validation, audit logs, and partial success handling.
@@ -383,14 +383,14 @@ class UserService:
             [r["mail"] for r in cleaned_rows]
         )
 
-        existing_emails = (
+        existing_emails_set: set[str] = (
             {email.lower() for email in existing_emails} if existing_emails else set()
         )
 
         remaining_rows = []
 
         for r in cleaned_rows:
-            if r["mail"].lower() in existing_emails:
+            if r["mail"].lower() in existing_emails_set:
                 failed_rows.append(
                     {
                         "row": r["row_num"],

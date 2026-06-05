@@ -36,7 +36,7 @@ def login(credentials: LoginUser, request: Request):
         value=refresh_token,
         httponly=True,
         secure=False,  # True in production HTTPS
-        samesite="Lax",
+        samesite="lax",
         max_age=7 * 24 * 60 * 60,
         expires=7 * 24 * 60 * 60,
         path="/",
@@ -103,7 +103,7 @@ def handle_microsoft_callback(code: str, request: Request):
             value=refresh_token,
             httponly=True,
             secure=False,  # True in production HTTPS
-            samesite="Lax",
+            samesite="lax",
             max_age=7 * 24 * 60 * 60,
             expires=7 * 24 * 60 * 60,
             path="/",
@@ -152,7 +152,7 @@ def refresh_token(request: Request, refresh_token: str = Cookie(None)):
         value=new_refresh_token,
         httponly=True,
         secure=False,  # True in production HTTPS
-        samesite="Lax",
+        samesite="lax",
         max_age=7 * 24 * 60 * 60,
         expires=7 * 24 * 60 * 60,
         path="/",
