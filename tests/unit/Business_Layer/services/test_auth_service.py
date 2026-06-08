@@ -67,7 +67,8 @@ class TestLoginUserHappyPath:
         """
         GIVEN  valid email and correct password
         WHEN   login_user() is called
-        THEN   response must contain access_token as a non-empty string
+        THEN   response must contain access_token and refresh_token as non-empty strings
+               (login now issues both tokens per documented token lifecycle)
         """
         # Arrange
         service = make_auth_service()
@@ -77,7 +78,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   return_value="mocked.jwt.token"):
+                   return_value="mocked.jwt.token"), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="mocked.refresh.token"):
 
             # Act
             result = service.login_user(login_credentials, "127.0.0.1", mock_request)
@@ -85,6 +88,8 @@ class TestLoginUserHappyPath:
         # Assert
         assert "access_token" in result
         assert result["access_token"] == "mocked.jwt.token"
+        assert "refresh_token" in result
+        assert result["refresh_token"] == "mocked.refresh.token"
 
     def test_login_user_valid_credentials_returns_bearer_token_type(
         self, mock_user_row, login_credentials, mock_request
@@ -102,7 +107,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   return_value="tok"):
+                   return_value="tok"), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="refresh.tok"):
 
             # Act
             result = service.login_user(login_credentials, "127.0.0.1", mock_request)
@@ -126,7 +133,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   return_value="tok"):
+                   return_value="tok"), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="refresh.tok"):
 
             # Act
             result = service.login_user(login_credentials, "127.0.0.1", mock_request)
@@ -154,7 +163,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   return_value="tok"):
+                   return_value="tok"), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="refresh.tok"):
 
             # Act
             result = service.login_user(creds, "127.0.0.1", mock_request)
@@ -179,7 +190,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   return_value="tok"):
+                   return_value="tok"), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="refresh.tok"):
 
             # Act
             service.login_user(login_credentials, client_ip, mock_request)
@@ -214,7 +227,9 @@ class TestLoginUserHappyPath:
              patch("Backend.Business_Layer.services.auth_service.validate_email_format"), \
              patch("Backend.Business_Layer.services.auth_service.verify_password"), \
              patch("Backend.Business_Layer.services.auth_service.token_create",
-                   side_effect=capture_token_create):
+                   side_effect=capture_token_create), \
+             patch("Backend.Business_Layer.services.auth_service.refresh_token_create",
+                   return_value="refresh.tok"):
 
             # Act
             service.login_user(login_credentials, "127.0.0.1", mock_request)

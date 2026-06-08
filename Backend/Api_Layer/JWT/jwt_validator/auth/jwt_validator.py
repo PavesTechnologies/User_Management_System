@@ -15,7 +15,7 @@ def validate_jwt_token(token: str):
         header = jwt.get_unverified_header(token)
         kid = header.get("kid")
         print(f"Token header 'kid': {kid}")
-        
+
         token_issuer = jwt.decode(token, options={"verify_signature": False}).get("iss")
         print("Allowed issuers:", validator.allowed_issuers)
         print("Issuer from token:", token_issuer)
@@ -33,7 +33,7 @@ def validate_jwt_token(token: str):
             key=key,
             algorithms=["RS256"],
             audience=None,
-            issuer=validator.allowed_issuers,   # ← list now
+            issuer=validator.allowed_issuers,  # ← list now
         )
 
         jti = decoded.get("jti")
@@ -58,7 +58,8 @@ def validate_jwt_token(token: str):
     except Exception as e:
         print(f"💥 Unexpected validation error: {e}")
         raise HTTPException(status_code=401, detail=f"JWT validation failed: {str(e)}")
-    
+
+
 # jwt_utils.py — add this generic decoder
 def decode_any_token(token: str) -> dict:
     """Decode any JWT (access or refresh) — used only for blacklisting."""

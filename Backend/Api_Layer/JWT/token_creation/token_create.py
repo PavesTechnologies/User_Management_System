@@ -12,10 +12,10 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(get_env_var("REFRESH_TOKEN_EXPIRE_DAYS"))
 KEYS_CACHE_TTL = 300  # refresh keys every 5 minutes
 ISSUER = get_env_var("ALLOWED_ISSUERS").split(",")[0]  # use first as default
 
-_private_key = None
-_public_key = None
-_algorithm = None
-_kid = None
+_private_key: str | None = None
+_public_key: str | None = None
+_algorithm: str | None = None
+_kid: str | None = None
 _keys_loaded_at = 0  # timestamp, not bool
 
 
@@ -66,13 +66,20 @@ def token_create(token_data: dict, request=None, issuer=None, db=None) -> str:
         "exp": expire,
     }
 
+    if _private_key is None:
+        raise ValueError("JWT private key not loaded — no active key in jwt_keys table")
+
     return jwt.encode(
         payload, _private_key, algorithm=_algorithm, headers={"kid": _kid}
     )
+
+
 def refresh_token_create(token_data: dict, request=None, issuer=None, db=None) -> str:
     _load_keys(db=db)
 
-    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)  # 7 days
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=REFRESH_TOKEN_EXPIRE_DAYS
+    )  # 7 days
     jti = generate_uuid7()
     # if issuer is None and request is not None:
     #     issuer = get_issuer_from_request(request)
@@ -81,19 +88,20 @@ def refresh_token_create(token_data: dict, request=None, issuer=None, db=None) -
     issuer = ISSUER
     payload = {
         # --- Identity (minimal) ---
-        "jti": jti,                          # unique id → for blacklisting
-        "user_id": token_data["user_id"],    # to fetch fresh user data on refresh
+        "jti": jti,  # unique id → for blacklisting
+        "user_id": token_data["user_id"],  # to fetch fresh user data on refresh
         "obs_user_uuid": token_data["user_uuid"],  # your internal UUID
-
         # --- Token metadata ---
-        "token_type": "refresh",             # distinguish from access token
-        "iss": issuer,                       # same issuer
-        "iat": datetime.now(timezone.utc),   # issued at
-        "exp": expire,                       # 7 days
-
+        "token_type": "refresh",  # distinguish from access token
+        "iss": issuer,  # same issuer
+        "iat": datetime.now(timezone.utc),  # issued at
+        "exp": expire,  # 7 days
         # --- Session binding ---
-        "session_id": generate_uuid7(),      # ties access + refresh to one session
+        "session_id": generate_uuid7(),  # ties access + refresh to one session
     }
+
+    if _private_key is None:
+        raise ValueError("JWT private key not loaded — no active key in jwt_keys table")
 
     return jwt.encode(
         payload, _private_key, algorithm=_algorithm, headers={"kid": _kid}

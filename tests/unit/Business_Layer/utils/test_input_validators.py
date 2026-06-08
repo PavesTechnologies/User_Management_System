@@ -15,7 +15,12 @@ from fastapi import HTTPException
 # Import the function under test
 # ─────────────────────────────────────────────────────────────────────────────
 
-from Backend.Business_Layer.utils.input_validators import validate_email_format
+from Backend.Business_Layer.utils.input_validators import (
+    validate_email_format,
+    validate_contact_number,
+    validate_name,
+    validate_password_strength,
+)
 
 
 class TestValidateEmailFormat:
@@ -83,3 +88,75 @@ class TestValidateEmailFormat:
         with pytest.raises(HTTPException) as exc_info:
             validate_email_format("notanemail")
         assert exc_info.value.status_code == 422
+
+
+class TestValidateContactNumber:
+
+    def test_valid_number_does_not_raise(self):
+        validate_contact_number("9876543210")
+
+    def test_valid_number_with_plus_prefix(self):
+        validate_contact_number("+919876543210")
+
+    def test_too_short_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_contact_number("12345")
+        assert exc.value.status_code == 400
+
+    def test_non_digits_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_contact_number("987-654-3210")
+        assert exc.value.status_code == 400
+
+
+class TestValidateName:
+
+    def test_valid_name_does_not_raise(self):
+        validate_name("John Doe")
+
+    def test_name_with_hyphen_does_not_raise(self):
+        validate_name("Mary-Jane")
+
+    def test_name_with_apostrophe_does_not_raise(self):
+        validate_name("O'Brien")
+
+    def test_name_with_digit_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_name("John2")
+        assert exc.value.status_code == 400
+
+    def test_name_with_special_char_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_name("John@Doe")
+        assert exc.value.status_code == 400
+
+
+class TestValidatePasswordStrength:
+
+    def test_valid_password_does_not_raise(self):
+        validate_password_strength("Secure@123")
+
+    def test_too_short_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_password_strength("Ab@1")
+        assert exc.value.status_code == 400
+
+    def test_no_uppercase_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_password_strength("secure@123")
+        assert exc.value.status_code == 400
+
+    def test_no_lowercase_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_password_strength("SECURE@123")
+        assert exc.value.status_code == 400
+
+    def test_no_digit_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_password_strength("Secure@abc")
+        assert exc.value.status_code == 400
+
+    def test_no_special_char_raises_400(self):
+        with pytest.raises(HTTPException) as exc:
+            validate_password_strength("SecurePass123")
+        assert exc.value.status_code == 400

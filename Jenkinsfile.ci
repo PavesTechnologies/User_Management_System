@@ -1,0 +1,136 @@
+pipeline {
+    agent { label 'worker' }
+
+    environment {
+        IMAGE_NAME    = "ums-service"
+        CONTAINER_NAME = "ums-container"
+        TARGET_BRANCH = "test"   // ← Change to your target branch (main, dev, staging, etc.)
+    }
+
+    // Trigger on GitHub webhook events
+    // triggers {
+    //     githubPullRequests(
+    //         triggerMode: 'HEAVY_HOOKS',
+    //         events: [Open(), Reopened(), NonMergeableStateChanged()],
+    //         abortRunning: true
+    //     )
+    // }
+
+    stages {
+
+        // ✅ Gate: Only proceed if PR targets the correct branch
+        stage('Validate PR Target Branch') {
+            steps {
+                script {
+                    def targetBranch = env.GITHUB_PR_TARGET_BRANCH ?: env.CHANGE_TARGET ?: ''
+                    echo "PR Target Branch: ${targetBranch}"
+
+                    if (targetBranch != env.TARGET_BRANCH) {
+                        currentBuild.result = 'ABORTED'
+                        error("CI skipped: PR is targeting '${targetBranch}', expected '${env.TARGET_BRANCH}'")
+                    }
+
+                    echo "✅ PR targets '${env.TARGET_BRANCH}' — proceeding with CI"
+                }
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                echo "Cloning repository..."
+                checkout scm
+            }
+        }
+
+        stage('Python Setup/Installation') {
+            steps {
+                echo "Setting up Python..."
+                sh '''
+                if ! command -v python3 &> /dev/null
+                then
+                    echo "Python3 not found. Installing..."
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-venv python3-pip
+                else
+                    echo "Python3 already installed"
+                fi
+
+                python3 --version
+                pip3 --version
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing Python dependencies..."
+                sh '''
+                python3 -m venv ums-venv
+                . ums-venv/bin/activate
+                pip install --upgrade pip
+                pip install -r Backend/requirements.txt
+                '''
+            }
+        }
+
+        stage('Load Environment Variables') {
+            steps {
+                echo "Loading environment variables from AWS Secrets Manager..."
+                sh """
+                aws secretsmanager get-secret-value \
+                    --secret-id dev-ums \
+                    --region ap-south-1 \
+                    --query SecretString \
+                    --output text | jq -r 'to_entries|map("\\(.key)=\\(.value)")|.[]' > Backend/.env
+                """
+                echo "✅ Converted AWS secret JSON → .env file"
+            }
+        }
+
+        stage('Code Quality Check and Tests') {
+            steps {
+                echo "Running code quality checks and tests..."
+                sh '''
+                . ums-venv/bin/activate
+                chmod +x scripts/quality_check.sh
+                ./scripts/quality_check.sh
+                '''
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "✅ CI passed for PR → ${env.TARGET_BRANCH}"
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'All quality gates passed',
+                state: 'SUCCESS'
+            )
+        }
+        failure {
+            echo "❌ CI failed for PR → ${env.TARGET_BRANCH}"
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'CI failed — check build logs',
+                state: 'FAILURE'
+            )
+        }
+        aborted {
+            echo "⏭️ CI skipped — PR does not target '${env.TARGET_BRANCH}'"
+            setGitHubPullRequestStatus(
+                context: 'ci/jenkins',
+                message: 'CI skipped — wrong target branch',
+                state: 'ERROR'
+            )
+        }
+        always {
+            // Clean up venv and .env to keep workspace tidy
+            sh '''
+            rm -rf ums-venv
+            rm -f Backend/.env
+            '''
+        }
+    }
+}

@@ -30,7 +30,7 @@ class UserDAO:
 
     def get_user_by_email(self, email: str) -> Optional[models.User]:
         return self.db.query(models.User).filter_by(mail=email).first()
-    
+
     def get_user_by_employee_id(self, employee_id: int) -> Optional[models.User]:
         return self.db.query(models.User).filter_by(employee_id=employee_id).first()
 
@@ -232,20 +232,18 @@ class UserDAO:
     # USER SEARCH OPERATIONS
     # --------------------------
 
-    def search_public_users(self, query: str, excluded_user_ids_subq):
-        return (
-            self.db.query(models.User)
-            .filter(
-                not_(models.User.user_id.in_(excluded_user_ids_subq)),
-                or_(
-                    models.User.first_name.ilike(f"%{query}%"),
-                    models.User.last_name.ilike(f"%{query}%"),
-                    models.User.mail.ilike(f"%{query}%"),
-                    models.User.contact.ilike(f"%{query}%"),
-                ),
+    def search_public_users(self, query: str, excluded_user_ids_subq=None):
+        filters = [
+            or_(
+                models.User.first_name.ilike(f"%{query}%"),
+                models.User.last_name.ilike(f"%{query}%"),
+                models.User.mail.ilike(f"%{query}%"),
+                models.User.contact.ilike(f"%{query}%"),
             )
-            .all()
-        )
+        ]
+        if excluded_user_ids_subq is not None:
+            filters.insert(0, not_(models.User.user_id.in_(excluded_user_ids_subq)))
+        return self.db.query(models.User).filter(*filters).all()
 
     def search_all_users(self, query: str) -> List[models.User]:
         return (
@@ -500,18 +498,26 @@ class UserDAO:
 
     def get_user_permissions(self, user_id: int) -> List[str]:
         permissions = (
-            self.db.query(models.Permission.permission_name)
+            self.db.query(models.Permissions.permission_code)
             .join(
-                models.Role_Permission,
-                models.Permission.permission_id == models.Role_Permission.permission_id,
+                models.Permission_Group_Mapping,
+                models.Permissions.permission_id
+                == models.Permission_Group_Mapping.permission_id,
             )
-            .join(models.Role, models.Role_Permission.role_id == models.Role.role_id)
-            .join(models.User_Role, models.User_Role.role_id == models.Role.role_id)
+            .join(
+                models.Role_Permission_Group,
+                models.Role_Permission_Group.group_id
+                == models.Permission_Group_Mapping.group_id,
+            )
+            .join(
+                models.User_Role,
+                models.User_Role.role_id == models.Role_Permission_Group.role_id,
+            )
             .filter(models.User_Role.user_id == user_id)
             .distinct()
             .all()
         )
-        return [p[0] for p in permissions]
+        return [p.permission_code for p in permissions]
 
     # --------------------------
     # USER-ROLE MAPPING OPERATIONS

@@ -1,13 +1,12 @@
 # Backend/Api_Layer/routes/auth_routes.py
-from fastapi import APIRouter, HTTPException, Request, status, Cookie
+from fastapi import APIRouter, HTTPException, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from ..interfaces.auth import (
     RegisterUser,
-    RefreshTokenSchema,
     LoginUser,
     ForgotPassword,
     ChangePasswordFirstLogin,
-    ChangePassword
+    ChangePassword,
 )
 from ...Business_Layer.services.auth_service import AuthService
 from ...config.env_loader import get_env_var
@@ -35,15 +34,12 @@ def login(credentials: LoginUser, request: Request):
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-
         httponly=True,
-        secure=False,   # True in production HTTPS
-        samesite="Lax",
-
+        secure=False,  # True in production HTTPS
+        samesite="lax",
         max_age=7 * 24 * 60 * 60,
         expires=7 * 24 * 60 * 60,
-
-        path="/"
+        path="/",
     )
 
     return response
@@ -51,18 +47,12 @@ def login(credentials: LoginUser, request: Request):
 
 # router
 @router.post("/logout")
-def logout(
-    request: Request,
-    refresh_token: str = Cookie(None)
-):
+def logout(request: Request, refresh_token: str = Cookie(None)):
 
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Missing access token"
-        )
+        raise HTTPException(status_code=401, detail="Missing access token")
 
     access_token = auth_header.split(" ")[1]
 
@@ -71,17 +61,10 @@ def logout(
     if refresh_token:
         blacklist_token(refresh_token)
 
-    response = JSONResponse(
-        content={
-            "message": "Logged out successfully"
-        }
-    )
+    response = JSONResponse(content={"message": "Logged out successfully"})
 
     # IMPORTANT
-    response.delete_cookie(
-        key="refresh_token",
-        path="/"
-    )
+    response.delete_cookie(key="refresh_token", path="/")
 
     return response
 
@@ -118,15 +101,12 @@ def handle_microsoft_callback(code: str, request: Request):
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-
             httponly=True,
-            secure=False,   # True in production HTTPS
-            samesite="Lax",
-
+            secure=False,  # True in production HTTPS
+            samesite="lax",
             max_age=7 * 24 * 60 * 60,
             expires=7 * 24 * 60 * 60,
-
-            path="/"
+            path="/",
         )
         return response
     except HTTPException as http_exc:
@@ -161,32 +141,24 @@ def change_password_first_login(payload: ChangePasswordFirstLogin, request: Requ
 
 
 @router.post("/refresh")
-def refresh_token(
-    request: Request,
-    refresh_token: str = Cookie(None)
-):
+def refresh_token(request: Request, refresh_token: str = Cookie(None)):
     if not refresh_token:
-        raise HTTPException(
-            status_code=401,
-            detail="Missing refresh token"
-        )
+        raise HTTPException(status_code=401, detail="Missing refresh token")
     result = auth_service.refresh_token(refresh_token, request)
     new_refresh_token = result.pop("refresh_token")
     response = JSONResponse(content=result)
     response.set_cookie(
         key="refresh_token",
         value=new_refresh_token,
-
         httponly=True,
-        secure=False,   # True in production HTTPS
-        samesite="Lax",
-
+        secure=False,  # True in production HTTPS
+        samesite="lax",
         max_age=7 * 24 * 60 * 60,
         expires=7 * 24 * 60 * 60,
-
-        path="/"
+        path="/",
     )
     return response
+
 
 @router.get("/first-time-login-check/{email}")
 def first_time_login_check(email: str):
@@ -195,5 +167,4 @@ def first_time_login_check(email: str):
 
 @router.put("/change-password")
 def change_password(request: Request, payLoad: ChangePassword):
-    return auth_service.change_password(
-        payLoad, request)
+    return auth_service.change_password(payLoad, request)

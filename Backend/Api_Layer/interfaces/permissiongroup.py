@@ -34,5 +34,6 @@ class PermissionInGroupwithId(BaseModel):
     class Config:
         from_attributes = True
 
+
 class BulkDeletePermissionGroupsRequest(BaseModel):
     group_uuids: List[str]

@@ -34,13 +34,16 @@ class ChangePasswordFirstLogin(BaseModel):
     confirm_password: str
     new_password: str
 
+
 class ChangePassword(BaseModel):
     confirm_password: str
     new_password: str
+
 
 class PermissionCheck(BaseModel):
     method: str
     path: str
 
+
 class RefreshTokenSchema(BaseModel):
-    refresh_token:str
+    refresh_token: str

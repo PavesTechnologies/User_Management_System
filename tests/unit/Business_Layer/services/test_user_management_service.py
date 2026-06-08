@@ -278,22 +278,26 @@ class TestGetUser:
 
     def test_get_user_uuid_restricts_super_admin_access(self):
         """
-        GIVEN  a non-Super-Admin user trying to access a Super Admin account
+        GIVEN  a non-Super-Admin user trying to access a Super_Admin account
         WHEN   get_user_uuid() is called
         THEN   raises HTTPException 403
+
+        Business rule (Functional Spec §4.3):
+          Super_Admin cannot be accessed/edited by non-Super_Admin users.
+          Role name is 'Super_Admin' (underscore) — matches role table role_name column.
         """
         # Arrange
         mock_dao = MagicMock()
         mock_user = make_mock_user_model(user_id=5)
         mock_dao.get_user_by_uuid.return_value = mock_user
-        mock_dao.get_user_roles_by_uuid.return_value = ["Super Admin"]
+        mock_dao.get_user_roles_by_uuid.return_value = ["Super_Admin"]
         service = make_user_service(mock_dao)
         current_user = {"user_id": 1, "roles": ["Admin"]}
 
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
             service.get_user_uuid(current_user, "uuid-5")
-        
+
         assert exc_info.value.status_code == 403
 
 
@@ -688,23 +692,27 @@ class TestDeactivateUser:
 
     def test_deactivate_super_admin_restricted_for_non_super_admin(self):
         """
-        GIVEN  a non-Super-Admin user trying to deactivate a Super Admin
+        GIVEN  a non-Super-Admin user trying to deactivate a Super_Admin account
         WHEN   deactivate_user_uuid() is called
         THEN   raises HTTPException 403
+
+        Business rule (Functional Spec §4.3):
+          Super_Admin cannot be deactivated by non-Super_Admin users.
+          Role name is 'Super_Admin' (underscore) — matches role table role_name column.
         """
         # Arrange
         mock_dao = MagicMock()
         mock_user = make_mock_user_model(user_id=2)
         mock_dao.get_user_by_uuid.return_value = mock_user
-        mock_dao.get_user_roles_by_uuid.return_value = ["Super Admin"]
-        
+        mock_dao.get_user_roles_by_uuid.return_value = ["Super_Admin"]
+
         service = make_user_service(mock_dao)
         current_user = {"user_id": 1, "roles": ["Admin"]}
 
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
             service.deactivate_user_uuid("uuid-2", current_user=current_user, request=MagicMock())
-        
+
         assert exc_info.value.status_code == 403
 
 

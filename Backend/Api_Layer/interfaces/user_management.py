@@ -33,13 +33,16 @@ class UserOut(UserBase):
     is_active: bool
     gender: Optional[str] = None
 
+
 class userOut_id(BaseModel):
-    user_id : int
+    user_id: int
     user_uuid: str
     message: str
 
+
 class EmployeeIDin(BaseModel):
     employee_ids: List[int]
+
 
 class UserOut_uuid(UserBase):
     class Config:
