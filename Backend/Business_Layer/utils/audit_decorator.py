@@ -82,7 +82,12 @@ def audit_action_with_request(
                 audit_data["new_data"] = new_data
 
             # Keep only changed fields for UPDATE (skip when function sets skip_filter=True)
-            if action_type == "UPDATE" and old_data and new_data and not audit_data.get("skip_filter"):
+            if (
+                action_type == "UPDATE"
+                and old_data
+                and new_data
+                and not audit_data.get("skip_filter")
+            ):
                 new_data = _filter_changed_fields(old_data, new_data)
 
             # Generate description
@@ -130,7 +135,9 @@ def _extract_user_id(*args, **kwargs) -> Optional[int]:
 def _get_ip_address(*args, **kwargs) -> Optional[str]:
     request = kwargs.get("request")
     if not request:
-        request = next((a for a in args if hasattr(a, "client") and hasattr(a, "headers")), None)
+        request = next(
+            (a for a in args if hasattr(a, "client") and hasattr(a, "headers")), None
+        )
     if request and hasattr(request, "client") and request.client:
         return request.client.host
     return None

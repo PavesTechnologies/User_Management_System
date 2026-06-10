@@ -363,13 +363,16 @@ class AuthService:
         #     )
         is_first_time = dao.first_time_login_check(email)
         return {"first_time_login": is_first_time}
+
     @audit_action_with_request(
         action_type="UPDATE",
         entity_type="User",
         capture_old_data=False,
         capture_new_data=False,
     )
-    def change_password(self, payload: ChangePassword, request: Request, audit_data: dict = None):
+    def change_password(
+        self, payload: ChangePassword, request: Request, audit_data: dict | None = None
+    ):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(
@@ -393,7 +396,9 @@ class AuthService:
             audit_data["old_data"] = {
                 col.name: (
                     str(getattr(user, col.name))
-                    if not isinstance(getattr(user, col.name), (str, int, float, bool, type(None)))
+                    if not isinstance(
+                        getattr(user, col.name), (str, int, float, bool, type(None))
+                    )
                     else getattr(user, col.name)
                 )
                 for col in user.__table__.columns
@@ -424,7 +429,10 @@ class AuthService:
                 audit_data["new_data"] = {
                     col.name: (
                         str(getattr(updated_user, col.name))
-                        if not isinstance(getattr(updated_user, col.name), (str, int, float, bool, type(None)))
+                        if not isinstance(
+                            getattr(updated_user, col.name),
+                            (str, int, float, bool, type(None)),
+                        )
                         else getattr(updated_user, col.name)
                     )
                     for col in updated_user.__table__.columns
