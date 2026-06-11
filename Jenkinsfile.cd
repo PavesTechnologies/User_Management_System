@@ -1,2 +1,5 @@
-@Library('paves-shared-lib') _ 
-deployToDev(serviceName: 'ums', serviceType: 'java', ecrRepo: 'paves/ums-dev')
+library(identifier: 'paves-shared-lib@dev',
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: 'https://github.com/PavesTechnologies/intranet-devops.git',
+                              credentialsId: 'all-cred']),
+        changelog: false)
