@@ -30,6 +30,12 @@ def audit_action_with_request(
             service_instance = args[0] if args else None
             db: Session = getattr(service_instance, "db", None)
             if not db:
+                request = kwargs.get("request") or next(
+                    (a for a in args if hasattr(a, "state")), None
+                )
+                if request and hasattr(request.state, "db"):
+                    db = request.state.db
+            if not db:
                 return func(*args, **kwargs)
 
             # Extract context
@@ -62,9 +68,11 @@ def audit_action_with_request(
             old_data = audit_data.get("old_data")
             new_data = audit_data.get("new_data")
 
-            # Check if function manually set entity_id
+            # Check if function manually set entity_id or user_id
             if "entity_id" in audit_data:
                 entity_id = audit_data["entity_id"]
+            if "user_id" in audit_data:
+                user_id = audit_data["user_id"]
 
             # Only auto-capture if not manually set by the function
             if new_data is None and capture_new_data:
@@ -73,8 +81,13 @@ def audit_action_with_request(
                 )
                 audit_data["new_data"] = new_data
 
-            # Keep only changed fields for UPDATE
-            if action_type == "UPDATE" and old_data and new_data:
+            # Keep only changed fields for UPDATE (skip when function sets skip_filter=True)
+            if (
+                action_type == "UPDATE"
+                and old_data
+                and new_data
+                and not audit_data.get("skip_filter")
+            ):
                 new_data = _filter_changed_fields(old_data, new_data)
 
             # Generate description
@@ -121,6 +134,10 @@ def _extract_user_id(*args, **kwargs) -> Optional[int]:
 
 def _get_ip_address(*args, **kwargs) -> Optional[str]:
     request = kwargs.get("request")
+    if not request:
+        request = next(
+            (a for a in args if hasattr(a, "client") and hasattr(a, "headers")), None
+        )
     if request and hasattr(request, "client") and request.client:
         return request.client.host
     return None

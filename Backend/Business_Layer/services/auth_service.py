@@ -5,6 +5,8 @@ import time
 import jwt
 from jwt import PyJWKClient
 
+from Backend.Business_Layer.utils.audit_decorator import audit_action_with_request
+
 from ...Api_Layer.interfaces.auth import (
     RegisterUser,
     LoginUser,
@@ -362,22 +364,46 @@ class AuthService:
         is_first_time = dao.first_time_login_check(email)
         return {"first_time_login": is_first_time}
 
-    def change_password(self, payload: ChangePassword, request: Request):
+    @audit_action_with_request(
+        action_type="UPDATE",
+        entity_type="User",
+        capture_old_data=False,
+        capture_new_data=False,
+    )
+    def change_password(
+        self, payload: ChangePassword, request: Request, audit_data: dict | None = None
+    ):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(
                 status_code=401, detail="Missing or invalid Authorization header"
             )
         token = auth_header.split(" ")[1]
-        user = validate_jwt_token(token)
-        user_mail = user.get("email")
-        dao = self._get_dao()
+        user_claims = validate_jwt_token(token)
+        user_mail = user_claims.get("email")
+        dao = self._get_dao(request)
 
         user = dao.get_user_by_email(user_mail)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
+
+        if audit_data is not None:
+            audit_data["entity_id"] = user.user_id
+            audit_data["user_id"] = user.user_id
+            audit_data["skip_filter"] = True
+            audit_data["old_data"] = {
+                col.name: (
+                    str(getattr(user, col.name))
+                    if not isinstance(
+                        getattr(user, col.name), (str, int, float, bool, type(None))
+                    )
+                    else getattr(user, col.name)
+                )
+                for col in user.__table__.columns
+                if col.name != "password"
+            }
 
         new_password = payload.new_password
         confirm_password = payload.confirm_password
@@ -396,6 +422,22 @@ class AuthService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update password",
             )
+
+        if audit_data is not None:
+            updated_user = dao.get_user_by_email(user_mail)
+            if updated_user:
+                audit_data["new_data"] = {
+                    col.name: (
+                        str(getattr(updated_user, col.name))
+                        if not isinstance(
+                            getattr(updated_user, col.name),
+                            (str, int, float, bool, type(None)),
+                        )
+                        else getattr(updated_user, col.name)
+                    )
+                    for col in updated_user.__table__.columns
+                    if col.name != "password"
+                }
 
         return {"message": "Password changed successfully"}
 

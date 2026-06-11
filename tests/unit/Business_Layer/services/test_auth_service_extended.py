@@ -304,6 +304,7 @@ class TestChangePassword:
         mock_dao = make_mock_dao()
         mock_user = MagicMock()
         mock_user.user_id = 1
+        mock_user.__table__ = MagicMock(columns=[])
         mock_dao.get_user_by_email.return_value = mock_user
         mock_dao.update_user_password.return_value = True
 
@@ -350,6 +351,7 @@ class TestChangePassword:
         service = make_auth_service()
         mock_dao = make_mock_dao()
         mock_user = MagicMock()
+        mock_user.__table__ = MagicMock(columns=[])
         mock_dao.get_user_by_email.return_value = mock_user
 
         payload = MagicMock()
