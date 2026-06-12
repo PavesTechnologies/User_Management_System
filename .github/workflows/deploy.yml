@@ -7,7 +7,23 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker-build-push-deploy:
+  docker-build-push-deploy:name: Restrict Merges to Main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if source is dev
+        if: github.head_ref != 'dev'
+        run: |
+          echo "FAIL: Merges into 'main' are only allowed from the 'dev' branch."
+          echo "Your source branch is currently '${{ github.head_ref }}'."
+          exit 1
     runs-on: ubuntu-latest
 
     steps:
