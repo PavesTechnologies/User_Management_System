@@ -37,3 +37,5 @@ Moved the branch guard inside the pipeline after checkout, so GIT_BRANCH is actu
 DATE: 26/06/2026
 
 Updated system configure in manage jenkins (unchecked "Include @Library changes in job recent changes" on both libraries)
+
+Testing full ci cd flow test -> dev -> prod
