@@ -309,7 +309,7 @@ def remove_permission_groups_from_role(
 
 
 def update_permission_groups_for_role(
-    db: Session, role_id: int, group_uuids: list[int]
+    db: Session, role_id: int, group_uuids: list[str]
 ):
     role = get_role(db, role_id)
     if not role:
@@ -351,26 +351,23 @@ def get_unassigned_permission_groups(db: Session, role_id: int):
         .filter(~models.Permission_Group.group_id.in_(assigned_group_ids))
         .all()
     )
+
+
 def get_users_by_role_uuid_or_name(
-    db: Session,
-    role_uuid: str = None,
-    role_name: str = None
+    db: Session, role_uuid: str | None = None, role_name: str | None = None
 ) -> list[dict]:
 
     if not role_uuid and not role_name:
         raise HTTPException(
-            status_code=400,
-            detail="Either role_uuid or role_name must be provided"
+            status_code=400, detail="Either role_uuid or role_name must be provided"
         )
 
-    query = db.query(
-        models.User_Role.user_id,
-        models.User.employee_id,
-        models.Role.role_name
-    ).join(
-        models.Role, models.User_Role.role_id == models.Role.role_id
-    ).join(
-        models.User, models.User_Role.user_id == models.User.user_id
+    query = (
+        db.query(
+            models.User_Role.user_id, models.User.employee_id, models.Role.role_name
+        )
+        .join(models.Role, models.User_Role.role_id == models.Role.role_id)
+        .join(models.User, models.User_Role.user_id == models.User.user_id)
     )
 
     # ✅ Allow both filters together
@@ -383,10 +380,6 @@ def get_users_by_role_uuid_or_name(
     results = query.all()
 
     return [
-        {
-            "user_id": r.user_id,
-            "employee_id": r.employee_id,
-            "role_name": r.role_name
-        }
+        {"user_id": r.user_id, "employee_id": r.employee_id, "role_name": r.role_name}
         for r in results
     ]

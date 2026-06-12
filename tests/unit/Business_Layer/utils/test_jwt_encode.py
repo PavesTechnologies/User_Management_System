@@ -21,6 +21,8 @@ VALID_TOKEN_DATA = {
     "user_id":     1,
     "name":        "John Doe",
     "email":       "john@example.com",
+    "employee_id": "EMP001",
+    "user_uuid":   "550e8400-e29b-41d4-a716-446655440000",
     "roles":       ["admin"],
     "permissions": ["read", "write"],
 }
@@ -52,30 +54,41 @@ class TestTokenCreate:
         assert isinstance(result, str)
         assert result == "mocked.jwt.token"
 
-    def test_token_create_with_request_extracts_issuer(self):
+    def test_token_create_issuer_always_uses_env_var(self):
         """
-        GIVEN  no explicit issuer but a valid Request object
-        WHEN   token_create() is called
-        THEN   issuer is derived from the request and token is created
+        GIVEN  a request object is passed to token_create()
+        WHEN   token is created
+        THEN   the issuer in the JWT payload is ALWAYS the env-configured ISSUER,
+               not derived from the request — this is documented behavior (ALLOWED_ISSUERS env var)
+
+        WHY REWRITTEN:
+          The previous test patched a function 'get_issuer_from_request' that was removed
+          from the implementation. The system now always uses ISSUER from the ALLOWED_ISSUERS
+          env var (Technical Design Document §10.2). Dynamic issuer extraction from request
+          is intentionally commented out to prevent issuer spoofing.
         """
         from Backend.Api_Layer.JWT.token_creation.token_create import token_create
+        import Backend.Api_Layer.JWT.token_creation.token_create as tc_module
 
         mock_request = MagicMock()
+        captured_payload = {}
+
+        def capture_encode(payload, *args, **kwargs):
+            captured_payload.update(payload)
+            return "env.issuer.token"
 
         with patch("Backend.Api_Layer.JWT.token_creation.token_create._load_keys"), \
              patch("Backend.Api_Layer.JWT.token_creation.token_create._private_key", "fake-key"), \
              patch("Backend.Api_Layer.JWT.token_creation.token_create._algorithm",   "RS256"), \
              patch("Backend.Api_Layer.JWT.token_creation.token_create._kid",         "kid-001"), \
-             patch("Backend.Api_Layer.JWT.token_creation.token_create.get_issuer_from_request",
-                   return_value="https://myapp.com"), \
              patch("Backend.Api_Layer.JWT.token_creation.token_create.jwt.encode",
-                   return_value="request.based.token"):
+                   side_effect=capture_encode):
 
-            # Act
             result = token_create(VALID_TOKEN_DATA, request=mock_request)
 
-        # Assert
-        assert result == "request.based.token"
+        # Assert — token created, and issuer matches the module-level ISSUER constant
+        assert isinstance(result, str)
+        assert captured_payload["iss"] == tc_module.ISSUER
 
     def test_token_create_payload_contains_required_fields(self):
         """
@@ -101,29 +114,46 @@ class TestTokenCreate:
             token_create(VALID_TOKEN_DATA, issuer="https://myapp.com")
 
         # Assert — all required JWT claims must be present
-        assert "user_id"     in captured_payload
-        assert "email"       in captured_payload
-        assert "roles"       in captured_payload
-        assert "permissions" in captured_payload
-        assert "iss"         in captured_payload
-        assert "exp"         in captured_payload
-        assert "jti"         in captured_payload
+        assert "user_id"      in captured_payload
+        assert "email"        in captured_payload
+        assert "name"         in captured_payload
+        assert "employee_id"  in captured_payload   # added: supports cross-module integration
+        assert "obs_user_uuid" in captured_payload  # added: stable UUID for external consumers
+        assert "roles"        in captured_payload
+        assert "permissions"  in captured_payload
+        assert "iss"          in captured_payload
+        assert "exp"          in captured_payload
+        assert "jti"          in captured_payload
 
     # ── Failure cases ──────────────────────────────────────────────────────
 
-    def test_token_create_no_issuer_no_request_raises_value_error(self):
+    def test_token_create_no_explicit_issuer_still_succeeds(self):
         """
-        GIVEN  neither 'request' nor 'issuer' is provided
+        GIVEN  neither 'request' nor 'issuer' is provided to token_create()
         WHEN   token_create() is called
-        THEN   ValueError must be raised — issuer is mandatory for JWT security
+        THEN   token is STILL created successfully using the env-configured ISSUER constant
+
+        WHY REWRITTEN:
+          The previous test expected a ValueError when no issuer/request was provided.
+          That guard was intentionally removed — the issuer is now unconditionally set
+          to the module-level ISSUER constant (from ALLOWED_ISSUERS env var).
+          This prevents runtime failures when callers omit the issuer parameter while
+          still guaranteeing a valid, known issuer in every token (Technical Design §10.2).
         """
         from Backend.Api_Layer.JWT.token_creation.token_create import token_create
 
-        with patch("Backend.Api_Layer.JWT.token_creation.token_create._load_keys"):
-            with pytest.raises(ValueError) as exc_info:
-                token_create(VALID_TOKEN_DATA)   # no request, no issuer
+        with patch("Backend.Api_Layer.JWT.token_creation.token_create._load_keys"), \
+             patch("Backend.Api_Layer.JWT.token_creation.token_create._private_key", "fake-key"), \
+             patch("Backend.Api_Layer.JWT.token_creation.token_create._algorithm",   "RS256"), \
+             patch("Backend.Api_Layer.JWT.token_creation.token_create._kid",         "kid-001"), \
+             patch("Backend.Api_Layer.JWT.token_creation.token_create.jwt.encode",
+                   return_value="no-issuer-param.token"):
 
-        assert "issuer" in str(exc_info.value).lower()
+            # Act — no request, no explicit issuer
+            result = token_create(VALID_TOKEN_DATA)
+
+        # Assert — must succeed (issuer comes from env, not from caller)
+        assert result == "no-issuer-param.token"
 
     def test_token_create_calls_load_keys(self):
         """

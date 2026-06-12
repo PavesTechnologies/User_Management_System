@@ -23,3 +23,17 @@ Result
 Before:  26,507ms per login (server)
 After:    6,113ms per login (server)
 Local:      895ms per login
+
+DATE: 08/06/2026
+testing ci (python shared lib pipeline test)
+testing ci when it is trigeering
+
+DATE: 11/06/2026
+testing ci
+updating deploytodev with branch protection
+
+Moved the branch guard inside the pipeline after checkout, so GIT_BRANCH is actually set when the check runs — the previous guard ran before checkout where GIT_BRANCH is always empty, making it silently skip every time.
+
+DATE: 26/06/2026
+
+Updated system configure in manage jenkins (unchecked "Include @Library changes in job recent changes" on both libraries)

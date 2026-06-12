@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends, Request, Query
 from typing import Optional, List
 
-from ..interfaces.role_mangement import (RoleBase, RoleOut, RoleGroupRequest, Group , 
-                                         BulkDeleteRolesRequest, User_Role, User_Role_input)
+from ..interfaces.role_mangement import (
+    RoleBase,
+    RoleOut,
+    RoleGroupRequest,
+    Group,
+    BulkDeleteRolesRequest,
+    User_Role,
+)
 from ...Business_Layer.services.role_service import RoleService
 
 router = APIRouter()
@@ -35,6 +41,7 @@ def bulk_delete_roles(
         current_user=request.state.user,
         request=request,
     )
+
 
 @router.get("/uuid/{role_uuid}", response_model=RoleOut)
 def get_role_by_uuid(role_uuid: str, service: RoleService = Depends(get_role_service)):
@@ -92,7 +99,7 @@ def update_permission_groups_for_role(
     payload: RoleGroupRequest,
     service: RoleService = Depends(get_role_service),
 ):
-    return service.update_permission_groups_for_role(role_id, payload.group_ids)
+    return service.update_permission_groups_for_role(role_id, payload.group_uuids)
 
 
 @router.put("/uuid/{role_uuid}/groups")
@@ -103,7 +110,7 @@ def update_permission_groups_for_role_uuid(
     service: RoleService = Depends(get_role_service),
 ):
     return service.update_permission_groups_for_role_uuid(
-        role_uuid, payload.group_uuids, current_user=request.state.user, request=request
+        role_uuid, payload.group_uuids
     )
 
 
@@ -154,13 +161,13 @@ def get_unassigned_permission_groups_for_role(
 ):
     return service.get_unassigned_permission_groups(role_uuid)
 
+
 @router.get("/users/role_name", response_model=List[User_Role])
 def get_users_by_role_id_or_name(
     role_uuid: Optional[str] = Query(None),
     role_name: Optional[str] = Query(None),
-    service: RoleService = Depends(get_role_service)
+    service: RoleService = Depends(get_role_service),
 ):
     return service.get_users_by_role_uuid_or_name(
-        role_name=role_name,
-        role_uuid=role_uuid
+        role_name=role_name, role_uuid=role_uuid
     )

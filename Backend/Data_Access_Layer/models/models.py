@@ -20,7 +20,7 @@ class User(Base):
 
     user_id = Column(Integer, primary_key=True, index=True)
     user_uuid = Column(String(36), unique=True, nullable=False)
-    employee_id = Column(String(20), unique=True) 
+    employee_id = Column(String(20), unique=True)
     first_name = Column(String(100))
     last_name = Column(String(100))
     mail = Column(String(150), unique=True)

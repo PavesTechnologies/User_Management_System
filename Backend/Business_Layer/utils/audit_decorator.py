@@ -30,6 +30,12 @@ def audit_action_with_request(
             service_instance = args[0] if args else None
             db: Session = getattr(service_instance, "db", None)
             if not db:
+                request = kwargs.get("request") or next(
+                    (a for a in args if hasattr(a, "state")), None
+                )
+                if request and hasattr(request.state, "db"):
+                    db = request.state.db
+            if not db:
                 return func(*args, **kwargs)
 
             # Extract context
@@ -62,9 +68,11 @@ def audit_action_with_request(
             old_data = audit_data.get("old_data")
             new_data = audit_data.get("new_data")
 
-            # Check if function manually set entity_id
+            # Check if function manually set entity_id or user_id
             if "entity_id" in audit_data:
                 entity_id = audit_data["entity_id"]
+            if "user_id" in audit_data:
+                user_id = audit_data["user_id"]
 
             # Only auto-capture if not manually set by the function
             if new_data is None and capture_new_data:
@@ -73,8 +81,13 @@ def audit_action_with_request(
                 )
                 audit_data["new_data"] = new_data
 
-            # Keep only changed fields for UPDATE
-            if action_type == "UPDATE" and old_data and new_data:
+            # Keep only changed fields for UPDATE (skip when function sets skip_filter=True)
+            if (
+                action_type == "UPDATE"
+                and old_data
+                and new_data
+                and not audit_data.get("skip_filter")
+            ):
                 new_data = _filter_changed_fields(old_data, new_data)
 
             # Generate description
@@ -121,6 +134,10 @@ def _extract_user_id(*args, **kwargs) -> Optional[int]:
 
 def _get_ip_address(*args, **kwargs) -> Optional[str]:
     request = kwargs.get("request")
+    if not request:
+        request = next(
+            (a for a in args if hasattr(a, "client") and hasattr(a, "headers")), None
+        )
     if request and hasattr(request, "client") and request.client:
         return request.client.host
     return None
@@ -128,15 +145,16 @@ def _get_ip_address(*args, **kwargs) -> Optional[str]:
 
 def _capture_entity_state(
     db: Session, entity_type: str, entity_id: Any
-) -> Optional[Dict]:
+) -> Optional[Dict[str, Any]] | list[Dict[str, Any]]:
     try:
         model_class = getattr(models, entity_type, None)
         if not model_class:
             return None
         if entity_type in ["User_Role", "User_Permission"]:
             return [
-                _serialize_entity(r)
+                s
                 for r in db.query(model_class).filter_by(user_id=entity_id).all()
+                if (s := _serialize_entity(r)) is not None
             ]
         entity = (
             db.query(model_class)
@@ -150,10 +168,10 @@ def _capture_entity_state(
     return None
 
 
-def _serialize_entity(entity) -> Dict[str, Any]:
+def _serialize_entity(entity) -> Optional[Dict[str, Any]]:
     if not entity:
         return None
-    result = {}
+    result: Dict[str, Any] = {}
     for column in entity.__table__.columns:
         value = getattr(entity, column.name)
         if isinstance(value, datetime):
@@ -166,7 +184,7 @@ def _serialize_entity(entity) -> Dict[str, Any]:
 
 
 def _capture_new_data(result, db: Session, entity_type: str, entity_id: Any):
-    new_data = None
+    new_data: Optional[Dict[str, Any]] | list[Dict[str, Any]] = None
     if hasattr(result, "__dict__"):
         new_data = _serialize_entity(result)
         # Try multiple ID field naming conventions

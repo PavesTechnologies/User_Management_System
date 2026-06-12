@@ -5,6 +5,8 @@ import time
 import jwt
 from jwt import PyJWKClient
 
+from Backend.Business_Layer.utils.audit_decorator import audit_action_with_request
+
 from ...Api_Layer.interfaces.auth import (
     RegisterUser,
     LoginUser,
@@ -15,13 +17,16 @@ from ...Api_Layer.interfaces.auth import (
 from ...Data_Access_Layer.dao.auth_dao import AuthDAO
 from ...Data_Access_Layer.models import models
 from ...Data_Access_Layer.dao.user_dao import UserDAO
-from ...Api_Layer.JWT.token_creation.token_create import token_create, refresh_token_create
+from ...Api_Layer.JWT.token_creation.token_create import (
+    token_create,
+    refresh_token_create,
+)
 from ..utils.password_utils import (
     hash_password,
     verify_password,
 )
 from ...Api_Layer.JWT.jwt_validator.auth.jwt_validator import validate_jwt_token
-from ...Business_Layer.utils.token_blacklist import blacklist_token, is_token_blacklisted
+from ...Business_Layer.utils.token_blacklist import blacklist_token
 from ..utils.input_validators import validate_email_format, validate_password_strength
 from ...Data_Access_Layer.utils.dependency import get_db  # only used here
 from ...config.env_loader import get_env_var
@@ -58,7 +63,7 @@ class AuthService:
             # X-Forwarded-For may contain multiple IPs, first is original client
             ip = x_forwarded_for.split(",")[0].strip()
         else:
-            ip = request.client.host
+            ip = request.client.host if request.client is not None else ""
         print("Client IP:", ip)
         return ip
 
@@ -152,7 +157,7 @@ class AuthService:
             "token_type": "bearer",
             "redirect": redirect,
         }
-    
+
     def refresh_token(self, refresh_token_str: str, request: Request):
         dao = self._get_dao(request)
 
@@ -168,23 +173,24 @@ class AuthService:
         except HTTPException as e:
             # re-raise with clearer message
             if e.status_code == 401:
-                raise HTTPException(401, "Refresh token invalid or expired, please login again")
+                raise HTTPException(
+                    401, "Refresh token invalid or expired, please login again"
+                )
             raise
 
         # ── Step 2: Type guard ────────────────────────────────────
         # ✅ Make sure this is actually a refresh token
         #    (not an access token being misused)
         if payload.get("token_type") != "refresh":
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token type"
-            )
+            raise HTTPException(status_code=401, detail="Invalid token type")
 
         # ── Step 3: Fetch fresh user data from DB ─────────────────
         # ✅ Use your existing dao pattern
         user_id = payload.get("user_id")
         results = dao.get_user_login_data_by_id(user_id)  # fetch by id
-        if not results:
+        if (
+            not results or results[0] is None
+        ):  # (None, None, None) is truthy; check user
             raise HTTPException(401, "User not found or inactive")
 
         user, roles, permissions = results
@@ -196,7 +202,7 @@ class AuthService:
             "user_uuid": user.user_uuid,
             "name": user.first_name + " " + user.last_name,
             "email": user.mail,
-            "roles": roles,           # ✅ fresh from DB
+            "roles": roles,  # ✅ fresh from DB
             "permissions": permissions,  # ✅ fresh from DB
         }
 
@@ -208,13 +214,13 @@ class AuthService:
             print("Old refresh token blacklisted")
 
         # ── Step 5: Issue new tokens ──────────────────────────────
-        new_access_token  = token_create(token_data, request=request, db=dao.db)
+        new_access_token = token_create(token_data, request=request, db=dao.db)
         new_refresh_token = refresh_token_create(token_data, request=request, db=dao.db)
 
         return {
-            "access_token":  new_access_token,
+            "access_token": new_access_token,
             "refresh_token": new_refresh_token,
-            "token_type":    "bearer"
+            "token_type": "bearer",
         }
 
     def handle_microsoft_callback(self, code: str, client_ip, request: Request):
@@ -345,7 +351,7 @@ class AuthService:
             )
         dao.password_last_updated(user.user_id)
         return {"message": "Password updated and user activated"}
-    
+
     def first_time_login_check(self, email: str):
         dao = self._get_dao()
         # validate_email_format(email)
@@ -358,22 +364,46 @@ class AuthService:
         is_first_time = dao.first_time_login_check(email)
         return {"first_time_login": is_first_time}
 
-    def change_password(self, payload: ChangePassword, request: Request):
+    @audit_action_with_request(
+        action_type="UPDATE",
+        entity_type="User",
+        capture_old_data=False,
+        capture_new_data=False,
+    )
+    def change_password(
+        self, payload: ChangePassword, request: Request, audit_data: dict | None = None
+    ):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(
                 status_code=401, detail="Missing or invalid Authorization header"
             )
         token = auth_header.split(" ")[1]
-        user = validate_jwt_token(token)
-        user_mail = user.get("email")
-        dao = self._get_dao()
+        user_claims = validate_jwt_token(token)
+        user_mail = user_claims.get("email")
+        dao = self._get_dao(request)
 
         user = dao.get_user_by_email(user_mail)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
+
+        if audit_data is not None:
+            audit_data["entity_id"] = user.user_id
+            audit_data["user_id"] = user.user_id
+            audit_data["skip_filter"] = True
+            audit_data["old_data"] = {
+                col.name: (
+                    str(getattr(user, col.name))
+                    if not isinstance(
+                        getattr(user, col.name), (str, int, float, bool, type(None))
+                    )
+                    else getattr(user, col.name)
+                )
+                for col in user.__table__.columns
+                if col.name != "password"
+            }
 
         new_password = payload.new_password
         confirm_password = payload.confirm_password
@@ -392,6 +422,22 @@ class AuthService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update password",
             )
+
+        if audit_data is not None:
+            updated_user = dao.get_user_by_email(user_mail)
+            if updated_user:
+                audit_data["new_data"] = {
+                    col.name: (
+                        str(getattr(updated_user, col.name))
+                        if not isinstance(
+                            getattr(updated_user, col.name),
+                            (str, int, float, bool, type(None)),
+                        )
+                        else getattr(updated_user, col.name)
+                    )
+                    for col in updated_user.__table__.columns
+                    if col.name != "password"
+                }
 
         return {"message": "Password changed successfully"}
 

@@ -1,0 +1,11 @@
+@Library('shared-lib') _
+
+buildPythonCIPipeline(
+    serviceName:       'ums-service',
+    requirementsPath:  'Backend/requirements.txt',
+    qualityScriptPath: 'scripts/quality_check.sh',
+    envSecret:         'dev-ums',
+    envOutputPath:     'Backend/.env',
+    webhookUrl:        env.TEAMS_WEBHOOK_URL,
+    awsRegion:         'ap-south-1'
+)

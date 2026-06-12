@@ -1,2 +1,8 @@
-@Library('paves-shared-lib') _ 
-deployToDev(serviceName: 'ums', serviceType: 'java', ecrRepo: 'paves/ums-dev')
+@Library('paves-shared-lib@dev') _
+
+deployToDev(
+  serviceName: 'ums',
+  serviceType: 'python',
+  ecrRepo:     'paves/ums-dev',
+  branch:      'dev'
+)

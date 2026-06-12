@@ -50,10 +50,11 @@ def count_active_users(request: Request):
     service = get_user_service(request)
     return {"active_user_count": service.count_active_users()}
 
+
 # ------------------------------------------------------------------------------
 # Get User by Employee ID
 @router.post("/employee/ids")
-def get_user_by_employee_id(employee_ids:EmployeeIDin,request: Request):
+def get_user_by_employee_id(employee_ids: EmployeeIDin, request: Request):
     service = get_user_service(request)
     try:
         users = service.get_user_by_employee_ids(employee_ids.employee_ids)
@@ -62,6 +63,8 @@ def get_user_by_employee_id(employee_ids:EmployeeIDin,request: Request):
         return users
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
 # ------------------------------------------------------------------------------
 # Paginated User List
 # ------------------------------------------------------------------------------
@@ -159,7 +162,17 @@ async def bulk_create_users(request: Request, file: UploadFile = File(...)):
         content = await file.read()
         df = pd.read_excel(BytesIO(content))
 
-        required_cols = {"user_uuid", "first_name", "last_name", "mail", "contact", "employee_id", "Designation", "Department", "Status"}
+        required_cols = {
+            "user_uuid",
+            "first_name",
+            "last_name",
+            "mail",
+            "contact",
+            "employee_id",
+            "Designation",
+            "Department",
+            "Status",
+        }
         if not required_cols.issubset(df.columns):
             raise HTTPException(
                 status_code=400,

@@ -49,6 +49,7 @@ def list_groups(
 
     return service.list_groups()
 
+
 # -------------------------------------------------------
 # Bulk delete permission groups
 # -------------------------------------------------------
@@ -64,6 +65,7 @@ def bulk_delete_permission_groups(
         request=request,
         current_user=request.state.user,
     )
+
 
 # -------------------------------------------------------
 # Get group by UUID
@@ -130,8 +132,6 @@ def delete_group(
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Group not found")
-    
-
 
 
 # -------------------------------------------------------
