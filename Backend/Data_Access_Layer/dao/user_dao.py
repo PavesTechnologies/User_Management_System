@@ -541,6 +541,28 @@ class UserDAO:
             self.db.rollback()
             raise e
 
+    def create_user_no_commit(self, user: models.User) -> models.User:
+        """Stage user insert without committing — caller owns the transaction."""
+        now = datetime.utcnow()
+        if not hasattr(user, "created_at") or user.created_at is None:
+            user.created_at = now
+        user.updated_at = now
+        self.db.add(user)
+        self.db.flush()  # sends INSERT so user_id is populated; no commit yet
+        return user
+
+    def map_user_role_no_commit(
+        self, user_id: int, role_id: int, created_by_user_id: int
+    ) -> None:
+        """Stage user-role mapping without committing — caller owns the transaction."""
+        self.db.execute(
+            models.User_Role.__table__.insert().values(
+                user_id=user_id,
+                role_id=role_id,
+                assigned_by=created_by_user_id,
+            )
+        )
+
     def map_user_roles_batch(self, mappings: List[Tuple[int, int, int]]) -> None:
         """
         Batch insert user-role mappings in a single database transaction.
