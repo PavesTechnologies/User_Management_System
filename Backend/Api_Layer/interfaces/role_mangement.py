@@ -44,3 +44,8 @@ class User_Role(BaseModel):
     user_id: int
     employee_id: Optional[str]
     role_name: str
+
+class User_Role_Response(BaseModel):
+    user_id: int
+    employee_id: Optional[str]
+    employee_name: str

@@ -7,7 +7,7 @@ from ..interfaces.role_mangement import (
     RoleGroupRequest,
     Group,
     BulkDeleteRolesRequest,
-    User_Role,
+    User_Role, User_Role_Response
 )
 from ...Business_Layer.services.role_service import RoleService
 
@@ -171,3 +171,9 @@ def get_users_by_role_id_or_name(
     return service.get_users_by_role_uuid_or_name(
         role_name=role_name, role_uuid=role_uuid
     )
+@router.get("/{role_name}/users", response_model=List[User_Role_Response])
+def get_users_by_role_name(
+    role_name: str,
+    service: RoleService = Depends(get_role_service),
+):
+    return service.get_users_by_role_name(role_name)
