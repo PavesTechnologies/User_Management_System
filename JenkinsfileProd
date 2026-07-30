@@ -1,2 +1,2 @@
-@Library('paves-shared-lib') _ 
+@Library('paves-shared-lib-main') _ 
 deployToProd(serviceName: 'ums', ecrRepo: 'paves/ums-prod')
