@@ -120,21 +120,28 @@ class UserService:
             password=hashed_password,
             is_active=user_schema.is_active,
         )
+
+        # Single atomic transaction: user creation + role assignment together
+        try:
+            created_user = self.dao.create_user_no_commit(new_user)
+
+            general_role = self.dao.get_role_by_name("General")
+            if not general_role:
+                raise ValueError("Role 'General' not found")
+
+            self.dao.map_user_role_no_commit(
+                created_user.user_id, general_role.role_id, created_by_user_id
+            )
+
+            self.db.commit()
+            self.db.refresh(created_user)
+        except Exception:
+            self.db.rollback()
+            raise
+
+        # Email sent only after DB commit succeeds
         send_welcome_email(
             user_schema.mail, user_schema.first_name, user_schema.password
-        )
-
-        # Step 1: Create user
-        created_user = self.dao.create_user(new_user)
-
-        # Step 2: Get General role
-        general_role = self.dao.get_role_by_name("General")
-        if not general_role:
-            raise ValueError("Role 'General' not found")
-
-        # Step 3: Map user to role
-        self.dao.map_user_role(
-            created_user.user_id, general_role.role_id, created_by_user_id
         )
 
         return created_user

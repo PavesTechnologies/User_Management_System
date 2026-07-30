@@ -399,3 +399,5 @@ class RoleService:
     ):
         print(f"Service received role_uuid: {role_uuid}, role_name: {role_name}")
         return role_dao.get_users_by_role_uuid_or_name(self.db, role_uuid, role_name)
+    def get_users_by_role_name(self, role_name: str):
+        return role_dao.get_users_by_role_name(self.db, role_name)

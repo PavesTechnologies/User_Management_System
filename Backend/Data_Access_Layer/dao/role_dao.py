@@ -383,3 +383,27 @@ def get_users_by_role_uuid_or_name(
         {"user_id": r.user_id, "employee_id": r.employee_id, "role_name": r.role_name}
         for r in results
     ]
+def get_users_by_role_name(
+    db: Session, role_name: str | None = None
+) -> list[dict]:
+
+    if not role_name:
+        raise HTTPException(
+            status_code=400, detail="Role name must be provided"
+        )
+
+    query = (
+        db.query(
+            models.User_Role.user_id, models.User.employee_id, models.User.first_name, models.User.last_name
+        )
+        .join(models.Role, models.User_Role.role_id == models.Role.role_id)
+        .join(models.User, models.User_Role.user_id == models.User.user_id)
+        .filter(models.Role.role_name == role_name)
+    )
+
+    results = query.all()
+
+    return [
+        {"user_id": r.user_id, "employee_id": r.employee_id, "employee_name": r.first_name + " " + r.last_name}
+        for r in results
+    ]
