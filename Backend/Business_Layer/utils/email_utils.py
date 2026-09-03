@@ -231,7 +231,7 @@ def send_welcome_email(
                         Welcome to Paves Technologies
                     </h2>
                     <p style="margin:8px 0 0; font-size:14px; color:#666;">
-                        Your Enterprise account has been successfully created
+                        Your Enterprise App account has been successfully created
                     </p>
                 </td>
             </tr>
@@ -268,7 +268,7 @@ def send_welcome_email(
                                            style="font-size:14px; color:#333;">
                                         <tr>
                                             <td style="padding:8px 0; width:150px; font-weight:bold;">
-                                                Temporary Password :
+                                                Temporary Password : 
                                             </td>
                                             <td style="padding:8px 0;">
                                                 {temp_password}
@@ -329,3 +329,4 @@ def send_welcome_email(
         subject,
         content,
     )
+
