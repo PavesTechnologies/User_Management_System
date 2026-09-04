@@ -166,20 +166,138 @@ def generate_otp(length: int = 6) -> str:
     return "".join([str(random.randint(0, 9)) for _ in range(length)])
 
 
-def send_otp_email(to_email: str, otp: str):
+from datetime import datetime
 
-    subject = "Your OTP Code"
+
+def send_otp_email(to_email: str, name: str, otp: str):
+
+    subject = "OTP Verification"
+
+    # Add spacing between each OTP digit
+    formatted_otp = "".join(
+        f'<span style="display:inline-block; margin-right:6px;">{digit}</span>'
+        for digit in otp
+    )
 
     content = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif;">
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title><b>{subject}</b></title>
+    </head>
+    
+    <body style="margin:0; padding:0; background:#f3f5f9; font-family:Arial, Helvetica, sans-serif;">
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0; background:#f3f5f9;">
+    <tr>
+    <td align="center">
+    
+        <!-- MAIN CARD -->
+        <table width="640" cellpadding="0" cellspacing="0"
+               style="background:#ffffff; border-radius:10px; border:1px solid #e0e4ec;">
 
-        <p>Your OTP code is:</p>
+               <!-- OUTLOOK-SAFE GRADIENT BAR -->
+            <tr>
+                <td style="height:8px; padding:0; margin:0; line-height:8px;">
+                    <div style="background-color:#1A4DFF;
+                                background-image:linear-gradient(90deg, #0A1A44, #3B0E57, #1A4DFF);
+                                height:8px; width:100%;"></div>
+                </td>
+            </tr>
+    
+            <!-- HEADER -->
+            <tr>
+                <td style="padding:32px 40px 20px;">
+                    <h2 style="margin:0; font-size:22px; color:#0A1A44; font-weight:700;">
+                        Your OTP Code
+                    </h2>
+                    <p style="margin:8px 0 0; font-size:14px; color:#666;">
+                        Notification from Paves Technologies User Management System
+                    </p>
+                </td>
+            </tr>
+    
+            <!-- BODY -->
+            <tr>
+                <td style="padding:10px 40px 30px; font-size:15px; color:#444; line-height:1.7;">
+    
+                    <!-- Greeting -->
+                    <p style="margin:0 0 18px;">
+                        Dear <b>{name}</b>,
+                    </p>
 
-        <h2>{otp}</h2>
+                    <p style="margin:0 0 18px;">
+                        Please use the following One-Time Password (OTP) to complete your verification for Enterprise Apps.
+                    </p>
+    
+                    <!-- Main Message -->
+                    <div>
+                        <div style="margin:0 0 15px;">
+                            <div style="font-size:15px; font-weight:700; color:#0A1A44;
+                                        border-left:4px solid #1A4DFF; padding-left:10px;">
+                               Your OTP is valid for 5 minutes. Please do not share this code with anyone.
+                            </div>
+                        </div>
+    
+                        <table width="100%" cellpadding="0" cellspacing="0"
+                               style="background:#fafbff; border:1px solid #e2e6ef; border-radius:8px;">
+                            <tr>
+                                <td style="padding:20px 25px; text-align:center;">
+                                    
+                                    <div style="
+                                        font-size:24px;
+                                        font-weight:700;
+                                        color:#0A1A44;
+                                        font-family:Arial, Helvetica, sans-serif;
+                                        letter-spacing:6px;
+                                        line-height:1.4;
+                                    ">
+                                        {formatted_otp}
+                                    </div>
 
-        <p>It is valid for 5 minutes.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
 
+                    <div style="text-align:center; margin:32px 0;">
+                        <a href="https://d2id2c6d521acd.cloudfront.net"
+                           style="
+                            background:#1A4DFF;
+                            padding:12px 32px;
+                            color:#ffffff !important;
+                            font-weight:600;
+                            font-size:15px;
+                            border-radius:6px;
+                            text-decoration:none;
+                            display:inline-block;
+                            border:1px solid #1A4DFF;
+                            font-family:Arial, Helvetica, sans-serif;
+                            text-align:center;
+                        ">
+                        <span style="color:#ffffff !important;">
+                            View in User Management System
+                        </span>
+                        </a>
+                    </div>
+    
+                </td>
+            </tr>
+    
+            <!-- FOOTER -->
+            <tr>
+                <td style="background:#f6f7fb; text-align:center;
+                           padding:14px; font-size:12px; color:#888;">
+                    © 2026 Paves Technologies. All rights reserved.
+                </td>
+            </tr>
+    
+        </table>
+    </td>
+    </tr>
+    </table>
+    
     </body>
     </html>
     """
@@ -189,125 +307,135 @@ def send_otp_email(to_email: str, otp: str):
         subject,
         content,
     )
-
 
 def send_welcome_email(
     to_email: str,
     name: str,
     temp_password: str,
 ):
-
     subject = "Welcome to Paves Technologies"
 
     content = f"""
-    <html>
-    <body
-        style="
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-        "
-    >
-
-        <p>Hello {name},</p>
-
-        <p>
-            Welcome to
-            <b>Paves Technologies</b>!
-        </p>
-
-        <p>
-            Your intranet account has been successfully created.
-        </p>
-
-        <p>
-            Please find your login details below:
-        </p>
-
-        <p>
-            <b>Temporary Password:</b>
-            {temp_password}
-        </p>
-
-        <p>
-            <b>Important:</b>
-            For security reasons, you must change your password
-            after logging in for the first time.
-            You will not be able to continue using the intranet
-            until your password has been updated.
-        </p>
-
-        <p>
-            You can log in and reset your password here:
-            <br>
-
-            <a href="{FRONTEND_URL}">
-                {FRONTEND_URL}
-            </a>
-        </p>
-
-        <p>
-            If you did not expect this email or believe it was
-            sent in error, please contact the system administrator
-            immediately.
-        </p>
-
-        <br>
-
-        <table
-            cellpadding="0"
-            cellspacing="0"
-            border="0"
-            width="100%"
-        >
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>{subject}</title>
+    </head>
+    
+    <body style="margin:0; padding:0; background:#f3f5f9; font-family:Arial, Helvetica, sans-serif;">
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0; background:#f3f5f9;">
+    <tr>
+    <td align="center">
+    
+        <!-- MAIN CARD -->
+        <table width="640" cellpadding="0" cellspacing="0"
+               style="background:#ffffff; border-radius:10px; border:1px solid #e0e4ec;">
+    
+            <!-- OUTLOOK-SAFE GRADIENT BAR -->
             <tr>
-                <td>
-
-                    <p style="margin:0;">
-                        Best regards,
-                    </p>
-
-                    <p style="margin:8px 0;">
-                        <b>User Management Team</b>
-                    </p>
-
-                    <!-- PUBLIC IMAGE URL -->
-                    <img
-                        src="https://pavestechnologies.com/wp-content/uploads/2023/05/Paves-Logo.png"
-                        alt="Paves Technologies"
-                        width="180"
-                        style="display:block;"
-                    >
-
-                    <p style="margin:0;">
-                        <b>Paves Technologies</b>
-                    </p>
-
-                    <p style="margin:5px 0;">
-                        Vasavi Sky City,
-                        10th Floor,
-                        Quick Start Co-working,
-                        <br>
-
-                        Telecom Nagar,
-                        Gachibowli,
-                        Hyderabad
-                    </p>
-
-                    <p style="margin:5px 0;">
-                        +91 9059364400
-                    </p>
-
-                    <p style="margin:5px 0;">
-                        <a href="https://pavestechnologies.com/">
-                            https://pavestechnologies.com/
-                        </a>
-                    </p>
-
+                <td style="height:8px; padding:0; margin:0; line-height:8px;">
+                    <div style="background:linear-gradient(90deg, #0A1A44, #3B0E57, #1A4DFF);
+                                height:8px; width:100%;"></div>
                 </td>
             </tr>
+    
+            <!-- HEADER -->
+            <tr>
+                <td style="padding:32px 40px 20px;">
+                    <h2 style="margin:0; font-size:22px; color:#0A1A44; font-weight:700;">
+                        Welcome to Paves Technologies
+                    </h2>
+                    <p style="margin:8px 0 0; font-size:14px; color:#666;">
+                        Your Enterprise App account has been successfully created
+                    </p>
+                </td>
+            </tr>
+    
+            <!-- BODY -->
+            <tr>
+                <td style="padding:10px 40px 30px; font-size:15px; color:#444; line-height:1.7;">
+    
+                    <!-- Greeting -->
+                    <p style="margin:0 0 18px;">
+                        Hello <b>{name}</b>,
+                    </p>
+    
+                    <!-- Main message -->
+                    <p style="margin:0 0 25px;">
+                        Welcome to <b>Paves Technologies</b>!<br><br>
+                        Please find your login details below:
+                    </p>
+    
+                    <!-- Details Section -->
+                    <div>
+                        <div style="margin:0 0 15px;">
+                            <div style="font-size:15px; font-weight:700; color:#0A1A44;
+                                        border-left:4px solid #1A4DFF; padding-left:10px;">
+                                Login Details
+                            </div>
+                        </div>
+    
+                        <table width="100%" cellpadding="0" cellspacing="0"
+                               style="background:#fafbff; border:1px solid #e2e6ef; border-radius:8px;">
+                            <tr>
+                                <td style="padding:20px 25px;">
+                                    <table width="100%" cellpadding="0" cellspacing="0"
+                                           style="font-size:14px; color:#333;">
+                                        <tr>
+                                            <td style="padding:8px 0; width:150px; font-weight:bold;">
+                                                Temporary Password : 
+                                            </td>
+                                            <td style="padding:8px 0;">
+                                                {temp_password}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+    
+                    <!-- Closing message -->
+                    <p style="margin:25px 0 10px; color:#555;">
+                        For security reasons, you must change your password after logging in for the first time.
+                    </p>
+    
+                    <!-- CTA BUTTON -->
+                    <div style="text-align:center; margin:32px 0;">
+                        <a href="{FRONTEND_URL}"
+                           style="
+                               background:#1A4DFF;
+                               padding:12px 32px;
+                               color:#ffffff !important;
+                               font-weight:600;
+                               font-size:15px;
+                               border-radius:6px;
+                               text-decoration:none;
+                               display:inline-block;
+                               font-family:Arial, Helvetica, sans-serif;
+                           ">
+                            Log in to Reset Password
+                        </a>
+                    </div>
+    
+                </td>
+            </tr>
+    
+            <!-- FOOTER -->
+            <tr>
+                <td style="background:#f6f7fb; text-align:center;
+                           padding:14px; font-size:12px; color:#888;">
+                    © 2024 Paves Technologies. All rights reserved.
+                </td>
+            </tr>
+    
         </table>
-
+    </td>
+    </tr>
+    </table>
+    
     </body>
     </html>
     """
@@ -317,3 +445,4 @@ def send_welcome_email(
         subject,
         content,
     )
+
