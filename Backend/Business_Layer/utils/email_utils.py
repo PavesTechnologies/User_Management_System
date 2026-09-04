@@ -262,7 +262,7 @@ def send_otp_email(to_email: str, name: str, otp: str):
                     </div>
 
                     <div style="text-align:center; margin:32px 0;">
-                        <a href="https://d2id2c6d521acd.cloudfront.net"
+                        <a href={FRONTEND_URL}
                            style="
                             background:#1A4DFF;
                             padding:12px 32px;
