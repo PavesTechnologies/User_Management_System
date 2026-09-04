@@ -289,7 +289,7 @@ def send_welcome_email(
                     <div style="text-align:center; margin:32px 0;">
                         <a href="{FRONTEND_URL}"
                            style="
-                               background:#0A1A44;
+                               background:#1A4DFF;
                                padding:12px 32px;
                                color:#ffffff !important;
                                font-weight:600;
@@ -297,7 +297,6 @@ def send_welcome_email(
                                border-radius:6px;
                                text-decoration:none;
                                display:inline-block;
-                               border:1px solid #1A4DFF;
                                font-family:Arial, Helvetica, sans-serif;
                            ">
                             Log in to Reset Password
