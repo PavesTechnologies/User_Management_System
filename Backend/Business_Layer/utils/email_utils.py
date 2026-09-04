@@ -200,6 +200,7 @@ def send_otp_email(to_email: str, name: str, otp: str):
                <!-- OUTLOOK-SAFE GRADIENT BAR -->
             <tr>
                 <td style="height:8px; padding:0; margin:0; line-height:8px;">
+                    <div style="background-color:#1A4DFF;
                                 background-image:linear-gradient(90deg, #0A1A44, #3B0E57, #1A4DFF);
                                 height:8px; width:100%;"></div>
                 </td>
