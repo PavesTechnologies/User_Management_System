@@ -196,6 +196,14 @@ def send_otp_email(to_email: str, name: str, otp: str):
         <!-- MAIN CARD -->
         <table width="640" cellpadding="0" cellspacing="0"
                style="background:#ffffff; border-radius:10px; border:1px solid #e0e4ec;">
+
+               <!-- OUTLOOK-SAFE GRADIENT BAR -->
+            <tr>
+                <td style="height:8px; padding:0; margin:0; line-height:8px;">
+                                background-image:linear-gradient(90deg, #0A1A44, #3B0E57, #1A4DFF);
+                                height:8px; width:100%;"></div>
+                </td>
+            </tr>
     
             <!-- HEADER -->
             <tr>
@@ -227,7 +235,7 @@ def send_otp_email(to_email: str, name: str, otp: str):
                         <div style="margin:0 0 15px;">
                             <div style="font-size:15px; font-weight:700; color:#0A1A44;
                                         border-left:4px solid #1A4DFF; padding-left:10px;">
-                               Your OTP is valid for 5 minutes from the time of generation.
+                               Your OTP is valid for 5 minutes. Please do not share this code with anyone.
                             </div>
                         </div>
     
@@ -255,7 +263,7 @@ def send_otp_email(to_email: str, name: str, otp: str):
                     <div style="text-align:center; margin:32px 0;">
                         <a href="https://d2id2c6d521acd.cloudfront.net"
                            style="
-                            background:#0A1A44;
+                            background:#1A4DFF;
                             padding:12px 32px;
                             color:#ffffff !important;
                             font-weight:600;
@@ -265,8 +273,11 @@ def send_otp_email(to_email: str, name: str, otp: str):
                             display:inline-block;
                             border:1px solid #1A4DFF;
                             font-family:Arial, Helvetica, sans-serif;
+                            text-align:center;
                         ">
+                        <span style="color:#ffffff !important;">
                             View in User Management System
+                        </span>
                         </a>
                     </div>
     
