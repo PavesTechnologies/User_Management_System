@@ -170,6 +170,10 @@ from datetime import datetime
 
 
 def send_otp_email(to_email: str, name: str, otp: str):
+from datetime import datetime
+
+
+def send_otp_email(to_email: str, name: str, otp: str):
 
     subject = "OTP Verification"
 
