@@ -165,14 +165,6 @@ def generate_otp(length: int = 6) -> str:
     """Generate a numeric OTP of given length."""
     return "".join([str(random.randint(0, 9)) for _ in range(length)])
 
-
-from datetime import datetime
-
-
-def send_otp_email(to_email: str, name: str, otp: str):
-from datetime import datetime
-
-
 def send_otp_email(to_email: str, name: str, otp: str):
 
     subject = "OTP Verification"
