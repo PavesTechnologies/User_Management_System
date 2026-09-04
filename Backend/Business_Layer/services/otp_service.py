@@ -22,7 +22,7 @@ def send_otp_service(email: str):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found or inactive"
         )
-
+    name = user.first_name + " " + user.last_name  # Assuming user has first_name and last_name attributes
     # 3. Remove existing OTPs for this email
     db.query(OTP).filter(OTP.email == email).delete()
 
@@ -36,7 +36,7 @@ def send_otp_service(email: str):
     db.commit()
 
     # 6. Send OTP email
-    send_otp_email(email, otp)
+    send_otp_email(email, name, otp)
 
     return {"message": "OTP sent successfully"}
 

@@ -166,20 +166,138 @@ def generate_otp(length: int = 6) -> str:
     return "".join([str(random.randint(0, 9)) for _ in range(length)])
 
 
-def send_otp_email(to_email: str, otp: str):
+from datetime import datetime
 
-    subject = "Your OTP Code"
+
+def send_otp_email(to_email: str, name: str, otp: str):
+
+    subject = "OTP Verification"
+
+    # Add spacing between each OTP digit
+    formatted_otp = "".join(
+        f'<span style="display:inline-block; margin-right:6px;">{digit}</span>'
+        for digit in otp
+    )
 
     content = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif;">
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title><b>{subject}</b></title>
+    </head>
+    
+    <body style="margin:0; padding:0; background:#f3f5f9; font-family:Arial, Helvetica, sans-serif;">
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0; background:#f3f5f9;">
+    <tr>
+    <td align="center">
+    
+        <!-- MAIN CARD -->
+        <table width="640" cellpadding="0" cellspacing="0"
+               style="background:#ffffff; border-radius:10px; border:1px solid #e0e4ec;">
 
-        <p>Your OTP code is:</p>
+               <!-- OUTLOOK-SAFE GRADIENT BAR -->
+            <tr>
+                <td style="height:8px; padding:0; margin:0; line-height:8px;">
+                    <div style="background-color:#1A4DFF;
+                                background-image:linear-gradient(90deg, #0A1A44, #3B0E57, #1A4DFF);
+                                height:8px; width:100%;"></div>
+                </td>
+            </tr>
+    
+            <!-- HEADER -->
+            <tr>
+                <td style="padding:32px 40px 20px;">
+                    <h2 style="margin:0; font-size:22px; color:#0A1A44; font-weight:700;">
+                        Your OTP Code
+                    </h2>
+                    <p style="margin:8px 0 0; font-size:14px; color:#666;">
+                        Notification from Paves Technologies User Management System
+                    </p>
+                </td>
+            </tr>
+    
+            <!-- BODY -->
+            <tr>
+                <td style="padding:10px 40px 30px; font-size:15px; color:#444; line-height:1.7;">
+    
+                    <!-- Greeting -->
+                    <p style="margin:0 0 18px;">
+                        Dear <b>{name}</b>,
+                    </p>
 
-        <h2>{otp}</h2>
+                    <p style="margin:0 0 18px;">
+                        Please use the following One-Time Password (OTP) to complete your verification for Enterprise Apps.
+                    </p>
+    
+                    <!-- Main Message -->
+                    <div>
+                        <div style="margin:0 0 15px;">
+                            <div style="font-size:15px; font-weight:700; color:#0A1A44;
+                                        border-left:4px solid #1A4DFF; padding-left:10px;">
+                               Your OTP is valid for 5 minutes. Please do not share this code with anyone.
+                            </div>
+                        </div>
+    
+                        <table width="100%" cellpadding="0" cellspacing="0"
+                               style="background:#fafbff; border:1px solid #e2e6ef; border-radius:8px;">
+                            <tr>
+                                <td style="padding:20px 25px; text-align:center;">
+                                    
+                                    <div style="
+                                        font-size:24px;
+                                        font-weight:700;
+                                        color:#0A1A44;
+                                        font-family:Arial, Helvetica, sans-serif;
+                                        letter-spacing:6px;
+                                        line-height:1.4;
+                                    ">
+                                        {formatted_otp}
+                                    </div>
 
-        <p>It is valid for 5 minutes.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
 
+                    <div style="text-align:center; margin:32px 0;">
+                        <a href="https://d2id2c6d521acd.cloudfront.net"
+                           style="
+                            background:#1A4DFF;
+                            padding:12px 32px;
+                            color:#ffffff !important;
+                            font-weight:600;
+                            font-size:15px;
+                            border-radius:6px;
+                            text-decoration:none;
+                            display:inline-block;
+                            border:1px solid #1A4DFF;
+                            font-family:Arial, Helvetica, sans-serif;
+                            text-align:center;
+                        ">
+                        <span style="color:#ffffff !important;">
+                            View in User Management System
+                        </span>
+                        </a>
+                    </div>
+    
+                </td>
+            </tr>
+    
+            <!-- FOOTER -->
+            <tr>
+                <td style="background:#f6f7fb; text-align:center;
+                           padding:14px; font-size:12px; color:#888;">
+                    © 2026 Paves Technologies. All rights reserved.
+                </td>
+            </tr>
+    
+        </table>
+    </td>
+    </tr>
+    </table>
+    
     </body>
     </html>
     """
@@ -189,7 +307,6 @@ def send_otp_email(to_email: str, otp: str):
         subject,
         content,
     )
-
 
 def send_welcome_email(
     to_email: str,
